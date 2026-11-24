@@ -471,10 +471,22 @@ function renderInstansiFilterOptions() {
   state.instansiFilter = sel.value;
 }
 
+function stripLeadingTitles(name) {
+  return String(name || '')
+    .replace(/^(?:(?:dr|drs|dra|ir|prof|h|hj|kh|ust|ny|tn)\.\s*)+/gi, '')
+    .trim();
+}
+
 function getFilteredSignatories() {
   const q = state.searchQuery.trim().toLowerCase();
   return [...state.signatories]
-    .sort((a, b) => a.rowNumber - b.rowNumber)
+    .sort((a, b) => {
+      const na = stripLeadingTitles(a.name);
+      const nb = stripLeadingTitles(b.name);
+      const cmp = na.localeCompare(nb, 'id', { sensitivity: 'base' });
+      if (cmp !== 0) return cmp;
+      return a.rowNumber - b.rowNumber;
+    })
     .filter((s) => {
       if (state.statusFilter === 'signed' && !s.signed) return false;
       if (state.statusFilter === 'unsigned' && s.signed) return false;
@@ -510,10 +522,6 @@ function renderList() {
       const classes = ['ledger-row'];
       if (s.isRepresentative) classes.push('is-leader');
       if (isFresh) classes.push('row-flash');
-
-      const noCell = s.isRepresentative
-        ? `<div class="r-no-leader">Unsur ${s.repOrder || ''}</div>`
-        : `<div class="r-no">${String(s.rowNumber).padStart(2, '0')}</div>`;
 
       let sigCell = '';
       if (s.signed && s.signatureUrl) {
@@ -555,11 +563,17 @@ function renderList() {
         `;
       }
 
+      const repTag = s.isRepresentative
+        ? `<span class="r-rep-tag">Perwakilan Unsur</span>`
+        : '';
+
       return `
         <div class="${classes.join(' ')}" data-row-id="${esc(s.id)}">
-          ${noCell}
           <div class="r-person">
-            <div class="r-name">${esc(s.name)}</div>
+            <div class="r-name-row">
+              <span class="r-name">${esc(s.name)}</span>
+              ${repTag}
+            </div>
             <div class="r-role">${esc(s.role)}</div>
           </div>
           ${sigCell}

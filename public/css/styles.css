@@ -337,23 +337,24 @@ html, body {
 /* ===== ARCHIVAL LEDGER TABLE ===== */
 .ledger { border-top: 1px solid var(--border); }
 .ledger-head {
-  display: grid; grid-template-columns: 70px minmax(0, 1.55fr) 210px 140px;
-  gap: 14px; padding: 10px 12px; background: var(--subtle);
+  display: grid; grid-template-columns: minmax(0, 1.8fr) 200px 140px;
+  gap: 18px; padding: 10px 14px; background: var(--subtle);
   border-bottom: 1px solid var(--border);
   font-size: 11px; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.055em; color: var(--muted);
 }
-.ledger-head .c-act { text-align: right; }
+.ledger-head .c-person,
+.ledger-head .c-sig,
+.ledger-head .c-act { text-align: left; }
 
 .ledger-row {
-  display: grid; grid-template-columns: 70px minmax(0, 1.55fr) 210px 140px;
-  gap: 14px; padding: 14px 12px; align-items: center;
+  display: grid; grid-template-columns: minmax(0, 1.8fr) 200px 140px;
+  gap: 18px; padding: 14px 14px; align-items: center;
   border-bottom: 1px solid var(--border); transition: background 150ms ease;
 }
-.ledger-row:hover { background: #fcfbf9; }
-.ledger-row.is-leader { background: #faf9f5; }
-.ledger-row.is-leader:hover { background: #f6f4ee; }
-.ledger-row.is-busy { background: #fffbeb; }
+.ledger-row:hover { background: #f8fafc; }
+.ledger-row.is-leader { background: #f8fafc; }
+.ledger-row.is-leader:hover { background: #f1f5f9; }
 .ledger-row.row-flash { animation: rowFlash 1.8s ease; }
 
 @keyframes rowFlash {
@@ -361,13 +362,14 @@ html, body {
   100% { background: transparent; }
 }
 
-.r-no { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
-.r-no-leader {
-  font-size: 11px; font-weight: 600; color: var(--ink);
-  letter-spacing: 0.02em;
-}
-.r-person { min-width: 0; }
+.r-person { min-width: 0; text-align: left; }
+.r-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .r-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.r-rep-tag {
+  font-size: 10.5px; font-weight: 600; color: var(--text-2);
+  background: var(--surface); border: 1px solid var(--border-strong);
+  padding: 1px 7px; border-radius: 99px;
+}
 .r-role { font-size: 12.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
 
 .r-sig-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
@@ -377,10 +379,9 @@ html, body {
 }
 .r-sig-well img { max-width: 175px; max-height: 44px; object-fit: contain; display: block; }
 .r-sig-time { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
-.r-sig-empty { font-size: 13px; color: #b8b6ae; }
-.r-sig-busy { font-size: 12.5px; color: var(--amber); font-weight: 500; }
+.r-sig-empty { font-size: 13px; color: #b8b6ae; text-align: left; }
 
-.r-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-wrap: wrap; }
+.r-actions { display: flex; align-items: center; justify-content: flex-start; gap: 6px; flex-wrap: wrap; }
 .status-done { font-size: 12.5px; font-weight: 500; color: var(--sage); }
 
 .empty-state { padding: 48px 16px; text-align: center; color: var(--muted); font-size: 13.5px; }
@@ -709,12 +710,11 @@ textarea.input-control { resize: vertical; line-height: 1.5; font-size: 13.5px; 
   }
   .ledger-row {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 1fr auto;
     grid-template-areas:
-      "badge status"
       "person person"
       "sig act";
-    gap: 8px 12px;
+    gap: 10px 12px;
     padding: 14px;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -722,25 +722,8 @@ textarea.input-control { resize: vertical; line-height: 1.5; font-size: 13.5px; 
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
   }
   .ledger-row.is-leader {
-    background: #faf9f5;
-    border-color: #e4e0d3;
-  }
-  .r-no, .r-no-leader {
-    grid-area: badge;
-    display: inline-flex;
-    align-items: center;
-    background: var(--subtle);
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 600;
-    width: fit-content;
-  }
-  .ledger-row.is-leader .r-no-leader {
-    background: var(--ink);
-    border-color: var(--ink);
-    color: #ffffff;
+    background: #f8fafc;
+    border-color: var(--border-strong);
   }
   .r-person {
     grid-area: person;
@@ -754,7 +737,7 @@ textarea.input-control { resize: vertical; line-height: 1.5; font-size: 13.5px; 
   .r-sig-empty { display: none; }
   .r-actions {
     grid-area: act;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-self: center;
   }
   /* When unsigned on mobile, make the "Tanda Tangani" button span full width cleanly */
@@ -762,7 +745,7 @@ textarea.input-control { resize: vertical; line-height: 1.5; font-size: 13.5px; 
     grid-column: 1 / -1;
     width: 100%;
     justify-content: stretch;
-    padding-top: 4px;
+    padding-top: 2px;
   }
   .ledger-row:has(.r-sig-empty) .r-actions .btn-primary {
     flex: 1;

@@ -662,13 +662,19 @@ textarea.input-control { resize: vertical; line-height: 1.5; font-size: 13.5px; 
   .primary-tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0;
+    gap: 4px;
     margin-bottom: 14px;
   }
   .primary-tab {
     justify-content: center;
-    padding: 10px 6px 11px;
-    font-size: 13px;
+    padding: 10px 4px 11px;
+    font-size: 12.5px;
+    gap: 5px;
+  }
+  .primary-tab .tab-ico {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
   }
 
   .filter-bar {
@@ -681,14 +687,14 @@ textarea.input-control { resize: vertical; line-height: 1.5; font-size: 13.5px; 
   .search-input { font-size: 14px; padding: 9px 30px 9px 34px; }
   .filter-selects {
     display: grid;
-    grid-template-columns: 1.25fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
     width: 100%;
   }
   .select-control {
     width: 100%;
     min-width: 0;
-    padding: 9px 10px;
+    padding: 9px 8px;
     font-size: 12.5px;
   }
   #addParticipantBtn { grid-column: 1 / -1; width: 100%; justify-content: center; }

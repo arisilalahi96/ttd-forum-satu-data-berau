@@ -1,6 +1,10 @@
 import { SignaturePad } from './signaturePad.js';
 import { SignatureImageCleaner } from './imageCleaner.js';
-import { renderOfficialDocument } from './documentView.js';
+import {
+  renderOfficialDocument,
+  extractEditedDocumentMeta,
+  bindInlinePaperEditor,
+} from './documentView.js';
 
 const STORAGE_KEYS = {
   sessionToken: 'fsd2026_session_token',
@@ -31,6 +35,7 @@ const state = {
   signingSignatoryId: null,
   signingMode: 'draw',
   detailSignatoryId: null,
+  editingDoc: false,
 };
 
 let ws = null;
@@ -285,7 +290,7 @@ function handleWsMessage(msg) {
     case 'locks':
       state.locks = msg.locks || {};
       renderList();
-      if (state.activeView === 'document') renderDocumentView();
+      if (state.activeView === 'document' && !state.editingDoc) renderDocumentView();
       break;
 
     case 'lock_denied':
@@ -373,7 +378,7 @@ function renderAll() {
   renderChrome();
   renderSummary();
   renderList();
-  if (state.activeView === 'document') renderDocumentView();
+  if (state.activeView === 'document' && !state.editingDoc) renderDocumentView();
 }
 
 function renderChrome() {
@@ -382,6 +387,7 @@ function renderChrome() {
   $('lockedBadge').classList.toggle('hidden', !state.settings.locked);
   $('adminEnterBtn').classList.toggle('hidden', admin);
   $('adminEditDocBtn').classList.toggle('hidden', !admin);
+  $('docStartEditBtn').classList.toggle('hidden', !admin);
   $('adminSettingsBtn').classList.toggle('hidden', !admin);
   $('adminExitBtn').classList.toggle('hidden', !admin);
   $('addParticipantBtn').classList.toggle('hidden', !admin);
@@ -556,6 +562,12 @@ function renderList() {
 }
 
 function renderDocumentView() {
+  const editing = state.isAdmin && state.editingDoc;
+  $('docNormalBar').classList.toggle('hidden', editing);
+  $('inlineEditBar').classList.toggle('hidden', !editing);
+  $('adminEditDocBtn').textContent = editing ? 'Sedang Edit...' : 'Edit Naskah';
+  $('adminEditDocBtn').disabled = editing;
+
   renderOfficialDocument({
     container: $('documentSheetContainer'),
     documentMeta: state.documentMeta,
@@ -563,10 +575,14 @@ function renderDocumentView() {
     locks: state.locks,
     clientId: state.clientId,
     locked: state.settings.locked && !state.isAdmin,
+    editMode: editing,
   });
 }
 
 function switchView(viewName) {
+  if (viewName !== 'document' && state.editingDoc) {
+    state.editingDoc = false;
+  }
   state.activeView = viewName;
   document.querySelectorAll('.primary-tab').forEach((btn) => {
     const active = btn.dataset.view === viewName;
@@ -579,6 +595,42 @@ function switchView(viewName) {
   $('viewDocument').classList.toggle('hidden', !isDoc);
 
   if (isDoc) renderDocumentView();
+}
+
+function startInlineDocEdit() {
+  if (!state.isAdmin) return;
+  state.editingDoc = true;
+  switchView('document');
+  renderDocumentView();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelInlineDocEdit() {
+  state.editingDoc = false;
+  renderDocumentView();
+}
+
+async function saveInlineDocEdit() {
+  const btn = $('saveInlineEditBtn');
+  const prev = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  try {
+    const patch = extractEditedDocumentMeta($('documentSheetContainer'));
+    const res = await apiFetch('/api/admin/document', {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+    if (res.documentMeta) state.documentMeta = res.documentMeta;
+    state.editingDoc = false;
+    renderAll();
+    showToast('Teks naskah Berita Acara tersimpan.');
+  } catch (err) {
+    showToast(err.message || 'Gagal menyimpan teks naskah.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prev;
+  }
 }
 
 // ===== SIGNING MODAL =====
@@ -868,38 +920,13 @@ function openEditModal(id) {
   $('editModal').classList.remove('hidden');
 }
 
-function openEditDocModal() {
-  if (!state.isAdmin || !state.documentMeta) return;
-  const m = state.documentMeta;
-  $('edTitleLines').value = (m.titleLines || []).join('\n');
-  $('edDocNumber').value = m.documentNumber || '';
-  $('edRepHeading').value = m.representativesHeading || '';
-  $('edOpening').value = m.openingParagraph || '';
-  $('edConsiderationsHeading').value = m.considerationsHeading || '';
-  $('edConsiderations').value = (m.considerations || []).join('\n');
-
-  const ed = m.eventDetails || [];
-  $('edDate').value = (ed.find((r) => /tanggal/i.test(r.label)) || ed[0] || {}).value || '';
-  $('edTime').value = (ed.find((r) => /waktu/i.test(r.label)) || ed[1] || {}).value || '';
-  $('edPlace').value = (ed.find((r) => /tempat/i.test(r.label)) || ed[2] || {}).value || '';
-
-  $('edAgreements').value = (m.agreements || [])
-    .map((r) => `${r.label} | ${r.value}`)
-    .join('\n');
-  $('edClosing').value = m.closingParagraph || '';
-  $('edLampiranHeading').value = m.lampiranHeading || 'LAMPIRAN I';
-  $('edLampiranSub').value = m.lampiranSubheading || '';
-  $('editDocError').classList.add('hidden');
-  $('editDocModal').classList.remove('hidden');
-}
-
 async function exitAdminMode() {
   await fetch('/api/auth/logout-admin', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
   state.isAdmin = false;
+  state.editingDoc = false;
   state.adminToken = '';
   localStorage.removeItem(STORAGE_KEYS.adminToken);
   $('settingsModal').classList.add('hidden');
-  $('editDocModal').classList.add('hidden');
   renderAll();
   showToast('Keluar dari Mode Panitia.');
 }
@@ -964,62 +991,12 @@ function bindEvents() {
   };
   $('gateAdminLink').addEventListener('click', openAdminLogin);
   $('adminEnterBtn').addEventListener('click', openAdminLogin);
-  $('adminEditDocBtn').addEventListener('click', openEditDocModal);
-  $('closeEditDocBtn').addEventListener('click', () => $('editDocModal').classList.add('hidden'));
-  $('cancelEditDocBtn').addEventListener('click', () => $('editDocModal').classList.add('hidden'));
-  $('editDocForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const errEl = $('editDocError');
-    errEl.classList.add('hidden');
-    const btn = $('saveEditDocBtn');
-    btn.disabled = true;
-
-    const agreements = $('edAgreements')
-      .value.split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line, idx) => {
-        const sep = line.indexOf('|');
-        if (sep !== -1) {
-          return { label: line.slice(0, sep).trim(), value: line.slice(sep + 1).trim() };
-        }
-        return { label: idx === 0 ? 'Kesatu' : idx === 1 ? 'Kedua' : `Poin ${idx + 1}`, value: line };
-      });
-
-    const payload = {
-      titleLines: $('edTitleLines').value.split('\n').map((l) => l.trim()).filter(Boolean),
-      documentNumber: $('edDocNumber').value,
-      representativesHeading: $('edRepHeading').value,
-      openingParagraph: $('edOpening').value,
-      considerationsHeading: $('edConsiderationsHeading').value,
-      considerations: $('edConsiderations').value.split('\n').map((l) => l.trim()).filter(Boolean),
-      eventDetails: [
-        { label: 'Hari dan tanggal', value: $('edDate').value.trim() },
-        { label: 'Waktu', value: $('edTime').value.trim() },
-        { label: 'Tempat', value: $('edPlace').value.trim() },
-      ],
-      agreements,
-      closingParagraph: $('edClosing').value,
-      lampiranHeading: $('edLampiranHeading').value,
-      lampiranSubheading: $('edLampiranSub').value,
-    };
-
-    try {
-      const res = await apiFetch('/api/admin/document', {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      });
-      if (res.documentMeta) state.documentMeta = res.documentMeta;
-      $('editDocModal').classList.add('hidden');
-      renderAll();
-      showToast('Teks naskah Berita Acara berhasil diperbarui.');
-    } catch (err) {
-      errEl.textContent = err.message || 'Gagal menyimpan teks naskah.';
-      errEl.classList.remove('hidden');
-    } finally {
-      btn.disabled = false;
-    }
-  });
+  // Direct In-Paper WYSIWYG Editor (Panitia only)
+  bindInlinePaperEditor($('documentSheetContainer'));
+  $('adminEditDocBtn').addEventListener('click', startInlineDocEdit);
+  $('docStartEditBtn').addEventListener('click', startInlineDocEdit);
+  $('cancelInlineEditBtn').addEventListener('click', cancelInlineDocEdit);
+  $('saveInlineEditBtn').addEventListener('click', saveInlineDocEdit);
   $('closeAdminLoginBtn').addEventListener('click', () => $('adminLoginModal').classList.add('hidden'));
   $('cancelAdminLoginBtn').addEventListener('click', () => $('adminLoginModal').classList.add('hidden'));
   $('adminSettingsBtn').addEventListener('click', openSettingsModal);
@@ -1315,7 +1292,7 @@ function bindEvents() {
     else if (!$('qrModal').classList.contains('hidden')) $('qrModal').classList.add('hidden');
     else if (!$('adminLoginModal').classList.contains('hidden')) $('adminLoginModal').classList.add('hidden');
     else if (!$('settingsModal').classList.contains('hidden')) $('settingsModal').classList.add('hidden');
-    else if (!$('editDocModal').classList.contains('hidden')) $('editDocModal').classList.add('hidden');
+    else if (state.editingDoc) cancelInlineDocEdit();
     else if (!$('editModal').classList.contains('hidden')) $('editModal').classList.add('hidden');
   });
 }

@@ -228,7 +228,86 @@ html, body {
 .select-control:hover { border-color: var(--border-strong); background-color: var(--surface); }
 .select-control:focus { border-color: var(--ink); background-color: var(--surface); color: var(--ink); }
 
-.doc-hint-line { margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+.doc-normal-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+
+/* Sticky Inline WYSIWYG Edit Bar */
+.inline-edit-bar {
+  position: sticky; top: 64px; z-index: 45;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+  background: var(--ink); color: #ffffff;
+  border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(20, 38, 61, 0.16);
+}
+.inline-edit-info { display: flex; flex-direction: column; gap: 2px; }
+.inline-edit-info strong { font-size: 13.5px; font-weight: 600; }
+.inline-edit-info span { font-size: 12px; color: rgba(255, 255, 255, 0.78); }
+.inline-edit-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.inline-edit-bar .btn-outline {
+  background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.28); color: #ffffff;
+}
+.inline-edit-bar .btn-outline:hover { background: rgba(255, 255, 255, 0.18); }
+.inline-edit-bar .btn-primary { background: #ffffff; color: var(--ink); }
+.inline-edit-bar .btn-primary:hover { background: #f3f2ed; }
+
+/* Direct In-Paper Editable Regions */
+.paper-sheet.is-editing-paper {
+  border-color: #b7c6d8;
+  box-shadow: 0 0 0 3px rgba(20, 38, 61, 0.06), 0 4px 18px rgba(20, 38, 61, 0.06);
+}
+.paper-sheet.is-editing-paper .rep-sig-slot,
+.paper-sheet.is-editing-paper .paper-sig-cell {
+  cursor: default; opacity: 0.65;
+}
+.paper-sheet.is-editing-paper .paper-title { white-space: pre-wrap; }
+
+.inline-editable {
+  display: inline-block; min-width: 40px; border-radius: 3px;
+  outline: 1px dashed #c8d3e0; outline-offset: 2px;
+  padding: 1px 4px; cursor: text;
+  transition: background 120ms ease, outline-color 120ms ease;
+}
+.paper-p > .inline-editable,
+.paper-title.inline-editable {
+  display: block; width: 100%;
+}
+.inline-editable:hover {
+  background: #f5f8fc; outline-color: #6b88ad;
+}
+.inline-editable:focus {
+  background: #eff5fc; outline: 1.5px solid var(--ink); outline-offset: 2px;
+}
+
+.editable-li {
+  position: relative; padding-right: 26px !important;
+}
+.editable-li-text {
+  display: block; width: 100%;
+}
+.editable-kv-val-wrap {
+  display: flex; align-items: flex-start; gap: 6px;
+}
+.editable-kv-val-wrap .inline-editable { flex: 1; }
+
+.inline-del-btn {
+  position: absolute; right: 0; top: 1px;
+  width: 20px; height: 20px; border: none; border-radius: 4px;
+  background: transparent; color: #9ca3af; font-size: 15px; line-height: 1;
+  cursor: pointer; font-family: var(--font-sans);
+}
+.editable-kv-val-wrap .inline-del-btn { position: static; flex-shrink: 0; }
+.inline-del-btn:hover { background: var(--danger-bg); color: var(--danger); }
+
+.inline-add-wrap { margin: 4px 0 12px 24px; }
+.inline-add-btn {
+  background: none; border: 1px dashed #b7c6d8; border-radius: 5px;
+  padding: 4px 10px; font-family: var(--font-sans); font-size: 12px; font-weight: 500;
+  color: var(--ink); cursor: pointer;
+}
+.inline-add-btn:hover { background: #f5f8fc; border-color: var(--ink); }
 
 /* ===== ARCHIVAL LEDGER TABLE ===== */
 .ledger { border-top: 1px solid var(--border); }

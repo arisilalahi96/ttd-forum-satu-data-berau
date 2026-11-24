@@ -185,11 +185,28 @@
           </div>
         </section>
 
-        <!-- ===== MODE 2: NASKAH BERITA ACARA (LIVE A4) ===== -->
+        <!-- ===== MODE 2: NASKAH BERITA ACARA (LIVE A4 + DIRECT INLINE EDIT FOR PANITIA) ===== -->
         <section id="viewDocument" class="hidden">
-          <p class="doc-hint-line no-print">
-            Klik langsung pada kolom tanda tangan di naskah untuk membubuhkan tanda tangan atau melihat waktu verifikasi.
-          </p>
+          <div id="docNormalBar" class="doc-normal-bar no-print">
+            <p class="doc-hint-line" style="margin:0">
+              Klik langsung pada kolom tanda tangan di naskah untuk membubuhkan tanda tangan atau melihat verifikasi.
+            </p>
+            <button type="button" id="docStartEditBtn" class="btn btn-outline btn-sm hidden">
+              Edit Teks di Naskah
+            </button>
+          </div>
+
+          <div id="inlineEditBar" class="inline-edit-bar hidden no-print">
+            <div class="inline-edit-info">
+              <strong>Mode Edit Naskah</strong>
+              <span>Klik langsung teks mana pun di kertas di bawah untuk mengubah — seperti mengetik di Word.</span>
+            </div>
+            <div class="inline-edit-actions">
+              <button type="button" id="cancelInlineEditBtn" class="btn btn-outline btn-sm">Batal</button>
+              <button type="button" id="saveInlineEditBtn" class="btn btn-primary btn-sm">Simpan Naskah</button>
+            </div>
+          </div>
+
           <div class="paper-tray">
             <div id="documentSheetContainer" class="document-stage"></div>
           </div>
@@ -499,93 +516,6 @@
         <div class="modal-footer">
           <button type="button" id="cancelEditBtn" class="btn btn-outline">Batal</button>
           <button type="submit" class="btn btn-primary">Simpan</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ===== MODAL 8: EDIT TEKS NASKAH BERITA ACARA (PANITIA ONLY) ===== -->
-  <div id="editDocModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="editDocModalTitle">
-    <div class="modal-panel modal-wide">
-      <div class="modal-header">
-        <div>
-          <p class="modal-kicker">Mode Panitia</p>
-          <h2 class="modal-title" id="editDocModalTitle">Edit Teks Naskah Berita Acara</h2>
-          <p class="modal-subtitle">Perubahan otomatis diterapkan ke Tampilan Naskah, file Word (.docx), dan PDF (.pdf).</p>
-        </div>
-        <button type="button" class="icon-close" id="closeEditDocBtn" aria-label="Tutup">&times;</button>
-      </div>
-      <form id="editDocForm">
-        <div class="modal-body">
-          <div class="doc-edit-grid">
-            <div class="field-group">
-              <label for="edTitleLines" class="field-label">Judul Dokumen <span class="muted">(1 baris per baris judul)</span></label>
-              <textarea id="edTitleLines" class="input-control textarea-sm" rows="3"></textarea>
-            </div>
-            <div class="field-group">
-              <label for="edDocNumber" class="field-label">Nomor Surat</label>
-              <input id="edDocNumber" type="text" class="input-control" />
-              <label for="edRepHeading" class="field-label" style="margin-top:10px">Judul Blok 4 Perwakilan</label>
-              <input id="edRepHeading" type="text" class="input-control" />
-            </div>
-          </div>
-
-          <div class="field-group">
-            <label for="edOpening" class="field-label">Paragraf Pembuka</label>
-            <textarea id="edOpening" class="input-control" rows="3"></textarea>
-          </div>
-
-          <div class="field-group">
-            <label for="edConsiderationsHeading" class="field-label">Kalimat Pengantar Pertimbangan</label>
-            <input id="edConsiderationsHeading" type="text" class="input-control" />
-          </div>
-
-          <div class="field-group">
-            <label for="edConsiderations" class="field-label">Daftar Poin Pertimbangan &amp; Materi <span class="muted">(1 poin per baris — ganti “………” dengan tema materi)</span></label>
-            <textarea id="edConsiderations" class="input-control" rows="7"></textarea>
-          </div>
-
-          <div class="doc-edit-grid-3">
-            <div class="field-group">
-              <label for="edDate" class="field-label">Hari dan Tanggal</label>
-              <input id="edDate" type="text" class="input-control" />
-            </div>
-            <div class="field-group">
-              <label for="edTime" class="field-label">Waktu</label>
-              <input id="edTime" type="text" class="input-control" />
-            </div>
-            <div class="field-group">
-              <label for="edPlace" class="field-label">Tempat</label>
-              <input id="edPlace" type="text" class="input-control" />
-            </div>
-          </div>
-
-          <div class="field-group">
-            <label for="edAgreements" class="field-label">Poin MENYEPAKATI <span class="muted">(format per baris: Label | Isi kesepakatan)</span></label>
-            <textarea id="edAgreements" class="input-control" rows="4"></textarea>
-          </div>
-
-          <div class="field-group">
-            <label for="edClosing" class="field-label">Paragraf Penutup</label>
-            <textarea id="edClosing" class="input-control" rows="2"></textarea>
-          </div>
-
-          <div class="doc-edit-grid">
-            <div class="field-group">
-              <label for="edLampiranHeading" class="field-label">Judul Lampiran</label>
-              <input id="edLampiranHeading" type="text" class="input-control" />
-            </div>
-            <div class="field-group">
-              <label for="edLampiranSub" class="field-label">Keterangan Lampiran</label>
-              <input id="edLampiranSub" type="text" class="input-control" />
-            </div>
-          </div>
-
-          <div id="editDocError" class="msg-inline msg-error hidden"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" id="cancelEditDocBtn" class="btn btn-outline">Batal</button>
-          <button type="submit" id="saveEditDocBtn" class="btn btn-primary">Simpan Perubahan Naskah</button>
         </div>
       </form>
     </div>

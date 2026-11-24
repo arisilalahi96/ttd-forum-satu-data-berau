@@ -64,12 +64,7 @@
         </div>
 
         <div class="topbar-right">
-          <span id="wsStatusPill" class="conn-status conn-connecting">
-            <span class="conn-dot"></span>
-            <span id="wsStatusText">Menyambungkan...</span>
-          </span>
-
-          <!-- Single Clean Download Dropdown -->
+          <!-- Single Clean Download Dropdown (Peserta: Word & PDF only; Panitia: Full Archive) -->
           <div class="dropdown" id="exportDropdown">
             <button type="button" id="exportMenuBtn" class="btn btn-primary btn-sm">
               Unduh &#9662;
@@ -77,33 +72,35 @@
             <div id="exportMenuPanel" class="dropdown-menu hidden" role="menu">
               <a id="dlFullDocx" class="dropdown-item" href="#">
                 <strong>Word (.docx)</strong>
-                <small>Berita Acara lengkap (template asli)</small>
+                <small>Berita Acara lengkap</small>
               </a>
               <a id="dlFullPdf" class="dropdown-item" href="#">
-                <strong>PDF F4 (.pdf)</strong>
-                <small>Berita Acara lengkap siap cetak</small>
+                <strong>PDF (.pdf)</strong>
+                <small>Berita Acara lengkap ukuran F4</small>
               </a>
-              <button type="button" id="printDocBtn" class="dropdown-item">
-                <strong>Cetak langsung</strong>
-                <small>Print dari browser (ukuran F4)</small>
-              </button>
-              <div class="dropdown-sep"></div>
-              <a id="dlRekapCsv" class="dropdown-item" href="#">
-                <strong>Rekap Daftar (.csv)</strong>
-                <small>Tabel status &amp; waktu untuk Excel</small>
-              </a>
-              <a id="dlZipDocx" class="dropdown-item" href="#">
-                <strong>Per Orang — ZIP Word</strong>
-                <small>Semua bukti individual .docx + PNG</small>
-              </a>
-              <a id="dlZipPdf" class="dropdown-item" href="#">
-                <strong>Per Orang — ZIP PDF</strong>
-                <small>Semua bukti individual .pdf + PNG</small>
-              </a>
+              <div id="adminExportExtras" class="hidden">
+                <div class="dropdown-sep"></div>
+                <button type="button" id="printDocBtn" class="dropdown-item">
+                  <strong>Cetak langsung</strong>
+                  <small>Print dari browser (F4)</small>
+                </button>
+                <a id="dlRekapCsv" class="dropdown-item" href="#">
+                  <strong>Rekap Daftar (.csv)</strong>
+                  <small>Tabel status &amp; waktu untuk Excel</small>
+                </a>
+                <a id="dlZipDocx" class="dropdown-item" href="#">
+                  <strong>Per Orang — ZIP Word</strong>
+                  <small>Semua bukti .docx + PNG</small>
+                </a>
+                <a id="dlZipPdf" class="dropdown-item" href="#">
+                  <strong>Per Orang — ZIP PDF</strong>
+                  <small>Semua bukti .pdf + PNG</small>
+                </a>
+              </div>
             </div>
           </div>
 
-          <button type="button" id="qrBtn" class="btn btn-outline btn-sm">QR</button>
+          <button type="button" id="qrBtn" class="btn btn-outline btn-sm hidden">QR</button>
           <button type="button" id="adminEnterBtn" class="btn btn-outline btn-sm">Panitia</button>
           <button type="button" id="adminSettingsBtn" class="btn btn-outline btn-sm hidden">Pengaturan</button>
           <button type="button" id="adminExitBtn" class="text-btn hidden">Keluar</button>

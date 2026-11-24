@@ -375,6 +375,8 @@ function renderChrome() {
   $('adminSettingsBtn').classList.toggle('hidden', !admin);
   $('adminExitBtn').classList.toggle('hidden', !admin);
   $('addParticipantBtn').classList.toggle('hidden', !admin);
+  $('qrBtn').classList.toggle('hidden', !admin);
+  $('adminExportExtras').classList.toggle('hidden', !admin);
 
   $('dlFullDocx').href = buildDownloadUrl('/api/export/berita-acara.docx');
   $('dlFullPdf').href = buildDownloadUrl('/api/export/berita-acara.pdf');
@@ -681,6 +683,9 @@ function openDetailModal(signatoryId) {
   const docxUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(sig.id)}.docx`);
   const pdfUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(sig.id)}.pdf`);
   const pngUrl = buildDownloadUrl(`/api/export/signature/${encodeURIComponent(sig.id)}.png`);
+  const adminPngBtn = state.isAdmin
+    ? `<a class="btn btn-outline btn-sm" href="${esc(pngUrl)}">PNG</a>`
+    : '';
 
   $('detailModalBody').innerHTML = `
     <div class="detail-sig-box">
@@ -691,10 +696,10 @@ function openDetailModal(signatoryId) {
       <div class="detail-meta-row"><span>Waktu</span><span>${esc(formatWitaFull(sig.signedAt))}</span></div>
       <div class="detail-meta-row"><span>Verifikasi</span><span class="mono">${esc(sig.verificationHash || '-')}</span></div>
     </div>
-    <div class="detail-dl-row">
+    <div class="detail-dl-row ${state.isAdmin ? 'is-admin-dl' : ''}">
       <a class="btn btn-primary btn-sm" href="${esc(docxUrl)}">Word (.docx)</a>
       <a class="btn btn-primary btn-sm" href="${esc(pdfUrl)}">PDF (.pdf)</a>
-      <a class="btn btn-outline btn-sm" href="${esc(pngUrl)}">PNG</a>
+      ${adminPngBtn}
     </div>
   `;
 

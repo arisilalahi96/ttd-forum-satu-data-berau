@@ -254,12 +254,12 @@ async function startServer() {
     }
   });
 
-  // ===== QR CODE =====
-  app.get('/api/qr', requireParticipant, async (req, res) => {
+  // ===== QR CODE (PANITIA ONLY) =====
+  app.get('/api/qr', requireAdmin, async (req, res) => {
     try {
       const protocol = req.protocol;
       const host = req.get('host');
-      const includeCode = req.query.includeCode === '1' && isValidAdmin(req);
+      const includeCode = req.query.includeCode === '1';
       const settings = store.getSettings();
       const baseUrl = `${protocol}://${host}/`;
       const targetUrl = includeCode
@@ -276,7 +276,7 @@ async function startServer() {
         url: targetUrl,
         svg,
         includeCode,
-        meetingCodeHint: isValidAdmin(req) ? settings.meetingCode : null,
+        meetingCodeHint: settings.meetingCode,
       });
     } catch {
       res.status(500).json({ error: 'Gagal membuat QR Code.' });
@@ -356,7 +356,8 @@ async function startServer() {
     }
   });
 
-  app.get('/api/export/signature/:id.png', requireParticipant, (req, res) => {
+  // ===== PANITIA-ONLY EXPORTS (RAW PNG, CSV REKAP, ZIP BUNDLES) =====
+  app.get('/api/export/signature/:id.png', requireAdmin, (req, res) => {
     const sig = store.getSignatory(req.params.id);
     if (!sig || !sig.signed) return res.status(404).json({ error: 'Tanda tangan belum tersedia.' });
     const pngBuf = store.getSignatureBuffer(sig.id);
@@ -366,7 +367,7 @@ async function startServer() {
     return res.send(pngBuf);
   });
 
-  app.get('/api/export/rekap.csv', requireParticipant, (_req, res) => {
+  app.get('/api/export/rekap.csv', requireAdmin, (_req, res) => {
     const csvBuf = generateRekapCsv(store);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader(
@@ -376,7 +377,7 @@ async function startServer() {
     return res.send(csvBuf);
   });
 
-  app.get('/api/export/bundle-pdf.zip', requireParticipant, async (_req, res) => {
+  app.get('/api/export/bundle-pdf.zip', requireAdmin, async (_req, res) => {
     try {
       const zipBuf = await generateIndividualBundleZip(store, 'pdf');
       res.setHeader('Content-Type', 'application/zip');
@@ -391,7 +392,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/export/bundle-docx.zip', requireParticipant, async (_req, res) => {
+  app.get('/api/export/bundle-docx.zip', requireAdmin, async (_req, res) => {
     try {
       const zipBuf = await generateIndividualBundleZip(store, 'docx');
       res.setHeader('Content-Type', 'application/zip');

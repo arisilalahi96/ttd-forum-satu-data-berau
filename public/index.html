@@ -100,8 +100,17 @@
             </div>
           </div>
 
+          <a
+            id="daftarHadirBtn"
+            class="btn btn-outline btn-sm"
+            href="https://daftarhadir.web.bps.go.id/#/go/dw4LI"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Daftar Hadir &#8599;
+          </a>
           <button type="button" id="adminEditDocBtn" class="btn btn-outline btn-sm hidden">Edit Naskah</button>
-          <button type="button" id="qrBtn" class="btn btn-outline btn-sm">QR</button>
+          <button type="button" id="qrBtn" class="btn btn-outline btn-sm">QR Zoom</button>
           <button type="button" id="adminEnterBtn" class="btn btn-outline btn-sm">Panitia</button>
           <button type="button" id="adminSettingsBtn" class="btn btn-outline btn-sm hidden">Pengaturan</button>
           <button type="button" id="adminExitBtn" class="text-btn hidden">Keluar</button>
@@ -391,39 +400,32 @@
     </div>
   </div>
 
-  <!-- ===== MODAL 4: QR RAPAT ===== -->
+  <!-- ===== MODAL 4: QR ZOOM ACARA ===== -->
   <div id="qrModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
     <div class="modal-panel modal-sm">
       <div class="modal-header">
         <div>
-          <p class="modal-kicker">Tautan Akses</p>
-          <h2 class="modal-title" id="qrModalTitle">QR Code Ruang Rapat</h2>
+          <p class="modal-kicker">Pertemuan Daring</p>
+          <h2 class="modal-title" id="qrModalTitle">QR Zoom Acara</h2>
         </div>
         <button type="button" class="icon-close" id="closeQrModalBtn" aria-label="Tutup">&times;</button>
       </div>
       <div class="modal-body qr-body">
         <div id="qrSvgBox" class="qr-svg-box"></div>
         <p id="qrParticipantHint" class="muted" style="margin:0;font-size:13px;text-align:center">
-          Pindai QR Code ini untuk membuka halaman penandatanganan Berita Acara.
+          Pindai QR Code ini untuk bergabung ke ruang Zoom Meeting acara Forum Satu Data.
         </p>
 
-        <!-- Panitia-only QR Link Editor -->
+        <!-- Panitia-only QR Zoom Link Editor -->
         <div id="qrAdminControls" class="hidden" style="width:100%;display:flex;flex-direction:column;gap:10px">
-          <p id="qrCodeHintBox" class="qr-code-line" style="text-align:center">
-            Kode Rapat: <strong id="qrCodeHintVal" class="mono">—</strong>
-          </p>
           <div>
-            <label for="qrUrlInput" class="field-label">Tautan Tujuan QR <span class="muted">(khusus Panitia)</span></label>
+            <label for="qrUrlInput" class="field-label">Tautan Zoom Meeting <span class="muted">(khusus Panitia)</span></label>
             <div class="qr-url-row">
-              <input id="qrUrlInput" type="url" class="input-control mono" placeholder="https://domainanda.com/" />
+              <input id="qrUrlInput" type="url" class="input-control mono" placeholder="https://zoom.us/j/..." />
               <button type="button" id="saveQrUrlBtn" class="btn btn-primary btn-sm">Simpan</button>
               <button type="button" id="copyQrUrlBtn" class="btn btn-outline btn-sm">Salin</button>
             </div>
           </div>
-          <label class="check-row">
-            <input type="checkbox" id="qrIncludeCodeCheck" />
-            <span>Sertakan Kode Rapat otomatis di QR (1× scan langsung masuk)</span>
-          </label>
           <div id="qrError" class="msg-inline msg-error hidden" style="margin-top:0"></div>
         </div>
       </div>

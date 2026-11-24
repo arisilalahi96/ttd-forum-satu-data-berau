@@ -816,7 +816,7 @@ function closeDetailModal() {
   $('detailModal').classList.add('hidden');
 }
 
-// ===== QR MODAL (PESERTA: SCAN QR ONLY; PANITIA: EDIT LINK & CODE OPTION) =====
+// ===== QR ZOOM MODAL (PESERTA: SCAN QR ONLY; PANITIA: EDIT ZOOM LINK) =====
 let currentQrTargetUrl = '';
 
 async function openQrModal() {
@@ -834,11 +834,9 @@ async function loadQrCode() {
     currentQrTargetUrl = data.url || '';
     if (state.isAdmin) {
       $('qrUrlInput').value = data.baseUrl || '';
-      $('qrIncludeCodeCheck').checked = Boolean(data.includeCode);
-      $('qrCodeHintVal').textContent = data.meetingCodeHint || '—';
     }
   } catch {
-    showToast('Gagal memuat QR Code.');
+    showToast('Gagal memuat QR Zoom.');
   }
 }
 
@@ -847,7 +845,6 @@ async function saveAdminQrSettings() {
   const errEl = $('qrError');
   errEl.classList.add('hidden');
   const rawUrl = $('qrUrlInput').value.trim();
-  const includeCode = $('qrIncludeCodeCheck').checked;
   const btn = $('saveQrUrlBtn');
   btn.disabled = true;
   try {
@@ -855,13 +852,13 @@ async function saveAdminQrSettings() {
       method: 'PATCH',
       body: JSON.stringify({
         qrCustomUrl: rawUrl,
-        qrIncludeCode: includeCode,
+        qrIncludeCode: false,
       }),
     });
     await loadQrCode();
-    showToast('Tautan QR Code diperbarui.');
+    showToast('Tautan QR Zoom diperbarui.');
   } catch (err) {
-    errEl.textContent = err.message || 'Gagal menyimpan tautan QR.';
+    errEl.textContent = err.message || 'Gagal menyimpan tautan QR Zoom.';
     errEl.classList.remove('hidden');
   } finally {
     btn.disabled = false;
@@ -1143,12 +1140,11 @@ function bindEvents() {
     }
   });
 
-  // QR Modal
+  // QR Zoom Modal
   $('qrBtn').addEventListener('click', openQrModal);
   $('closeQrModalBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
   $('closeQrDoneBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
   $('saveQrUrlBtn').addEventListener('click', saveAdminQrSettings);
-  $('qrIncludeCodeCheck').addEventListener('change', saveAdminQrSettings);
   $('copyQrUrlBtn').addEventListener('click', async () => {
     const toCopy = currentQrTargetUrl || $('qrUrlInput').value;
     try {

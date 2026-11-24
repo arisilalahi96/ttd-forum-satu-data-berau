@@ -254,20 +254,12 @@ async function startServer() {
     }
   });
 
-  // ===== QR CODE (PESERTA CAN VIEW QR ONLY; ONLY PANITIA CAN CHANGE LINK/OPTIONS) =====
+  // ===== QR ZOOM ACARA (PESERTA CAN VIEW QR ONLY; ONLY PANITIA CAN CHANGE ZOOM LINK) =====
   app.get('/api/qr', requireParticipant, async (req, res) => {
     try {
       const admin = isValidAdmin(req);
       const settings = store.getSettings();
-      const defaultUrl = `${req.protocol}://${req.get('host')}/`;
-      const baseUrl = settings.qrCustomUrl || defaultUrl;
-      const includeCode = Boolean(settings.qrIncludeCode);
-
-      let targetUrl = baseUrl;
-      if (includeCode) {
-        const sep = baseUrl.includes('?') ? '&' : '?';
-        targetUrl = `${baseUrl}${sep}kode=${encodeURIComponent(settings.meetingCode)}`;
-      }
+      const targetUrl = settings.qrCustomUrl || 'https://zoom.us/';
 
       const svg = await QRCode.toString(targetUrl, {
         type: 'svg',
@@ -278,10 +270,8 @@ async function startServer() {
       res.json({
         svg,
         url: admin ? targetUrl : null,
-        baseUrl: admin ? baseUrl : null,
+        baseUrl: admin ? (settings.qrCustomUrl || '') : null,
         isCustomUrl: Boolean(settings.qrCustomUrl),
-        includeCode: admin ? includeCode : false,
-        meetingCodeHint: admin ? settings.meetingCode : null,
       });
     } catch {
       res.status(500).json({ error: 'Gagal membuat QR Code.' });

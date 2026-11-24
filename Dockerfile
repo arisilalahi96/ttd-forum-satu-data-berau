@@ -7,11 +7,11 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-RUN mkdir -p /app/data/signatures
+RUN mkdir -p /app/data/signatures && chmod -R 777 /app/data
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=7860
 
-EXPOSE 3000
+EXPOSE 7860
 
 CMD ["node", "src/server.js"]

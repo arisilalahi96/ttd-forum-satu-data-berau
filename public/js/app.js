@@ -391,7 +391,6 @@ function renderChrome() {
   $('adminSettingsBtn').classList.toggle('hidden', !admin);
   $('adminExitBtn').classList.toggle('hidden', !admin);
   $('addParticipantBtn').classList.toggle('hidden', !admin);
-  $('qrBtn').classList.toggle('hidden', !admin);
   $('adminExportExtras').classList.toggle('hidden', !admin);
 
   $('dlFullDocx').href = buildDownloadUrl('/api/export/berita-acara.docx');
@@ -821,27 +820,55 @@ function closeDetailModal() {
   $('detailModal').classList.add('hidden');
 }
 
-// ===== QR MODAL =====
+// ===== QR MODAL (PESERTA: SCAN QR ONLY; PANITIA: EDIT LINK & CODE OPTION) =====
+let currentQrTargetUrl = '';
+
 async function openQrModal() {
+  $('qrError').classList.add('hidden');
+  $('qrAdminControls').classList.toggle('hidden', !state.isAdmin);
+  $('qrParticipantHint').classList.toggle('hidden', state.isAdmin);
   $('qrModal').classList.remove('hidden');
-  $('qrAutoCodeOption').classList.toggle('hidden', !state.isAdmin);
   await loadQrCode();
 }
 
 async function loadQrCode() {
-  const includeCode = state.isAdmin && $('qrIncludeCodeCheck').checked ? '1' : '0';
   try {
-    const data = await apiFetch(`/api/qr?includeCode=${includeCode}`);
+    const data = await apiFetch('/api/qr');
     $('qrSvgBox').innerHTML = data.svg;
-    $('qrUrlInput').value = data.url;
-    if (data.meetingCodeHint) {
-      $('qrCodeHintVal').textContent = data.meetingCodeHint;
-      $('qrCodeHintBox').classList.remove('hidden');
-    } else {
-      $('qrCodeHintBox').classList.add('hidden');
+    currentQrTargetUrl = data.url || '';
+    if (state.isAdmin) {
+      $('qrUrlInput').value = data.baseUrl || '';
+      $('qrIncludeCodeCheck').checked = Boolean(data.includeCode);
+      $('qrCodeHintVal').textContent = data.meetingCodeHint || '—';
     }
   } catch {
     showToast('Gagal memuat QR Code.');
+  }
+}
+
+async function saveAdminQrSettings() {
+  if (!state.isAdmin) return;
+  const errEl = $('qrError');
+  errEl.classList.add('hidden');
+  const rawUrl = $('qrUrlInput').value.trim();
+  const includeCode = $('qrIncludeCodeCheck').checked;
+  const btn = $('saveQrUrlBtn');
+  btn.disabled = true;
+  try {
+    await apiFetch('/api/admin/settings', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        qrCustomUrl: rawUrl,
+        qrIncludeCode: includeCode,
+      }),
+    });
+    await loadQrCode();
+    showToast('Tautan QR Code diperbarui.');
+  } catch (err) {
+    errEl.textContent = err.message || 'Gagal menyimpan tautan QR.';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -1124,15 +1151,17 @@ function bindEvents() {
   $('qrBtn').addEventListener('click', openQrModal);
   $('closeQrModalBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
   $('closeQrDoneBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
-  $('qrIncludeCodeCheck').addEventListener('change', loadQrCode);
+  $('saveQrUrlBtn').addEventListener('click', saveAdminQrSettings);
+  $('qrIncludeCodeCheck').addEventListener('change', saveAdminQrSettings);
   $('copyQrUrlBtn').addEventListener('click', async () => {
+    const toCopy = currentQrTargetUrl || $('qrUrlInput').value;
     try {
-      await navigator.clipboard.writeText($('qrUrlInput').value);
+      await navigator.clipboard.writeText(toCopy);
     } catch {
       $('qrUrlInput').select();
       document.execCommand('copy');
     }
-    showToast('Tautan disalin.');
+    showToast('Tautan QR disalin.');
   });
 
   // Signing Modal

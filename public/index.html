@@ -101,7 +101,7 @@
           </div>
 
           <button type="button" id="adminEditDocBtn" class="btn btn-outline btn-sm hidden">Edit Naskah</button>
-          <button type="button" id="qrBtn" class="btn btn-outline btn-sm hidden">QR</button>
+          <button type="button" id="qrBtn" class="btn btn-outline btn-sm">QR</button>
           <button type="button" id="adminEnterBtn" class="btn btn-outline btn-sm">Panitia</button>
           <button type="button" id="adminSettingsBtn" class="btn btn-outline btn-sm hidden">Pengaturan</button>
           <button type="button" id="adminExitBtn" class="text-btn hidden">Keluar</button>
@@ -390,17 +390,29 @@
       </div>
       <div class="modal-body qr-body">
         <div id="qrSvgBox" class="qr-svg-box"></div>
-        <p id="qrCodeHintBox" class="qr-code-line hidden">
-          Kode Rapat: <strong id="qrCodeHintVal" class="mono">—</strong>
+        <p id="qrParticipantHint" class="muted" style="margin:0;font-size:13px;text-align:center">
+          Pindai QR Code ini untuk membuka halaman penandatanganan Berita Acara.
         </p>
-        <div class="qr-url-row">
-          <input id="qrUrlInput" type="text" class="input-control mono" readonly />
-          <button type="button" id="copyQrUrlBtn" class="btn btn-outline btn-sm">Salin</button>
+
+        <!-- Panitia-only QR Link Editor -->
+        <div id="qrAdminControls" class="hidden" style="width:100%;display:flex;flex-direction:column;gap:10px">
+          <p id="qrCodeHintBox" class="qr-code-line" style="text-align:center">
+            Kode Rapat: <strong id="qrCodeHintVal" class="mono">—</strong>
+          </p>
+          <div>
+            <label for="qrUrlInput" class="field-label">Tautan Tujuan QR <span class="muted">(khusus Panitia)</span></label>
+            <div class="qr-url-row">
+              <input id="qrUrlInput" type="url" class="input-control mono" placeholder="https://domainanda.com/" />
+              <button type="button" id="saveQrUrlBtn" class="btn btn-primary btn-sm">Simpan</button>
+              <button type="button" id="copyQrUrlBtn" class="btn btn-outline btn-sm">Salin</button>
+            </div>
+          </div>
+          <label class="check-row">
+            <input type="checkbox" id="qrIncludeCodeCheck" />
+            <span>Sertakan Kode Rapat otomatis di QR (1× scan langsung masuk)</span>
+          </label>
+          <div id="qrError" class="msg-inline msg-error hidden" style="margin-top:0"></div>
         </div>
-        <label id="qrAutoCodeOption" class="check-row hidden">
-          <input type="checkbox" id="qrIncludeCodeCheck" />
-          <span>Sertakan Kode Rapat otomatis di QR (1× scan masuk)</span>
-        </label>
       </div>
       <div class="modal-footer">
         <button type="button" id="closeQrDoneBtn" class="btn btn-primary btn-full">Tutup</button>

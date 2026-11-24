@@ -32,6 +32,8 @@ class ForumStore {
         locked: false,
         allowSelfAdd: false,
         requireMeetingCode: true,
+        qrCustomUrl: '',
+        qrIncludeCode: false,
         updatedAt: new Date().toISOString(),
       },
       signatories: createInitialSignatories(),
@@ -539,6 +541,14 @@ class ForumStore {
     const s = this.state.settings;
     if (typeof patch.locked === 'boolean') s.locked = patch.locked;
     if (typeof patch.requireMeetingCode === 'boolean') s.requireMeetingCode = patch.requireMeetingCode;
+    if (typeof patch.qrIncludeCode === 'boolean') s.qrIncludeCode = patch.qrIncludeCode;
+    if (typeof patch.qrCustomUrl === 'string') {
+      const rawUrl = patch.qrCustomUrl.trim().slice(0, 300);
+      if (rawUrl && !/^https?:\/\/\S+$/i.test(rawUrl)) {
+        throw new Error('Link QR harus diawali http:// atau https://');
+      }
+      s.qrCustomUrl = rawUrl;
+    }
     if (typeof patch.meetingCode === 'string' && patch.meetingCode.trim().length >= 3) {
       s.meetingCode = normalizeCode(patch.meetingCode).slice(0, 20);
     }

@@ -254,29 +254,34 @@ async function startServer() {
     }
   });
 
-  // ===== QR CODE (PANITIA ONLY) =====
-  app.get('/api/qr', requireAdmin, async (req, res) => {
+  // ===== QR CODE (PESERTA CAN VIEW QR ONLY; ONLY PANITIA CAN CHANGE LINK/OPTIONS) =====
+  app.get('/api/qr', requireParticipant, async (req, res) => {
     try {
-      const protocol = req.protocol;
-      const host = req.get('host');
-      const includeCode = req.query.includeCode === '1';
+      const admin = isValidAdmin(req);
       const settings = store.getSettings();
-      const baseUrl = `${protocol}://${host}/`;
-      const targetUrl = includeCode
-        ? `${baseUrl}?kode=${encodeURIComponent(settings.meetingCode)}`
-        : baseUrl;
+      const defaultUrl = `${req.protocol}://${req.get('host')}/`;
+      const baseUrl = settings.qrCustomUrl || defaultUrl;
+      const includeCode = Boolean(settings.qrIncludeCode);
+
+      let targetUrl = baseUrl;
+      if (includeCode) {
+        const sep = baseUrl.includes('?') ? '&' : '?';
+        targetUrl = `${baseUrl}${sep}kode=${encodeURIComponent(settings.meetingCode)}`;
+      }
 
       const svg = await QRCode.toString(targetUrl, {
         type: 'svg',
         margin: 2,
-        color: { dark: '#111827', light: '#FFFFFF' },
+        color: { dark: '#14263D', light: '#FFFFFF' },
       });
 
       res.json({
-        url: targetUrl,
         svg,
-        includeCode,
-        meetingCodeHint: settings.meetingCode,
+        url: admin ? targetUrl : null,
+        baseUrl: admin ? baseUrl : null,
+        isCustomUrl: Boolean(settings.qrCustomUrl),
+        includeCode: admin ? includeCode : false,
+        meetingCodeHint: admin ? settings.meetingCode : null,
       });
     } catch {
       res.status(500).json({ error: 'Gagal membuat QR Code.' });

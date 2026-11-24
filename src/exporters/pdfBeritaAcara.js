@@ -2,7 +2,6 @@
 
 const PDFDocument = require('pdfkit');
 const { getPngDimensions } = require('../utils/pngTools');
-const { formatWitaDateTime } = require('../utils/formatters');
 
 // A4 dimensions matching BERITA ACARA HASIL KESEPAKATAN_Baru.docx (210mm x 297mm)
 const A4_WIDTH = 595.28;
@@ -26,7 +25,6 @@ function generateBeritaAcaraPdf(store) {
     const doc = new PDFDocument({
       size: 'A4',
       margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
-      bufferPages: true,
       info: {
         Title: (meta.titleLines || []).join(' '),
         Author: 'Forum Satu Data Kabupaten Berau',
@@ -271,30 +269,6 @@ function generateBeritaAcaraPdf(store) {
       }
 
       cursorY += rowH;
-    }
-
-    // Footers (with zeroed bottom margin to prevent extra blank pages)
-    const range = doc.bufferedPageRange();
-    const printedAt = formatWitaDateTime(new Date().toISOString());
-    for (let i = 0; i < range.count; i++) {
-      doc.switchToPage(i);
-      const prevBottom = doc.page.margins.bottom;
-      doc.page.margins.bottom = 0;
-      doc
-        .font('Helvetica')
-        .fontSize(7.5)
-        .fillColor('#6B7280')
-        .text(`Berita Acara Hasil Kesepakatan Forum Satu Data Kab. Berau 2026  •  ${printedAt}`, MARGIN, A4_HEIGHT - 34, {
-          width: cw - 65,
-          align: 'left',
-          lineBreak: false,
-        });
-      doc.text(`Hal. ${i + 1} / ${range.count}`, MARGIN + cw - 65, A4_HEIGHT - 34, {
-        width: 65,
-        align: 'right',
-        lineBreak: false,
-      });
-      doc.page.margins.bottom = prevBottom;
     }
 
     doc.end();

@@ -496,6 +496,21 @@ async function startServer() {
     }
   });
 
+  app.post('/api/admin/reset-all', requireAdmin, async (_req, res) => {
+    try {
+      const result = await store.resetAllData();
+      hub.broadcast({
+        type: 'full_reset',
+        signatories: result.signatories,
+        auditEntry: result.auditEntry,
+        stats: result.stats,
+      });
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      res.status(500).json({ error: err.message || 'Gagal mereset data.' });
+    }
+  });
+
   // ===== STATIC FRONTEND =====
   const publicDir = path.join(__dirname, '..', 'public');
   app.use(express.static(publicDir, { extensions: ['html'] }));

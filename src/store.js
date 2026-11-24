@@ -520,6 +520,30 @@ class ForumStore {
       auditEntry,
     };
   }
+
+  async resetAllData() {
+    const existingIds = this.state.signatories.map((s) => s.id);
+    this.state.signatories = createInitialSignatories();
+    this.signatureCache.clear();
+
+    const auditEntry = this._pushAudit({
+      type: 'cleared',
+      summary: 'Panitia mereset seluruh tanda tangan & peserta tambahan kembali ke kondisi awal.',
+    });
+
+    await this._enqueuePersist(async () => {
+      for (const id of existingIds) {
+        await this._persistSignaturePng(id, null);
+      }
+      await this._persistStateImmediate();
+    });
+
+    return {
+      signatories: this.state.signatories.map((s) => this.getPublicSignatory(s)),
+      auditEntry,
+      stats: this.getStats(),
+    };
+  }
 }
 
 module.exports = { ForumStore };

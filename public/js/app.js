@@ -22,7 +22,7 @@ const state = {
   adminToken: localStorage.getItem(STORAGE_KEYS.adminToken) || '',
   displayName: localStorage.getItem(STORAGE_KEYS.displayName) || '',
 
-  activeView: 'list', // 'list' | 'document' | 'settings'
+  activeView: 'list', // 'list' | 'document'
   searchQuery: '',
   statusFilter: 'all',
   recentlySignedIds: new Set(),
@@ -97,7 +97,7 @@ function showToast(message) {
     el.style.opacity = '0';
     el.style.transition = 'opacity 200ms ease';
     setTimeout(() => el.remove(), 220);
-  }, 3600);
+  }, 3400);
 }
 
 function authHeaders(extra = {}) {
@@ -169,11 +169,8 @@ async function bootstrap() {
     $('gateProgress').textContent = `${boot.stats.signed} / ${boot.stats.total} pihak`;
     if (state.displayName) $('gateDisplayName').value = state.displayName;
 
-    if (boot.authorized) {
-      await enterMainApp();
-    } else {
-      showAccessGate();
-    }
+    if (boot.authorized) await enterMainApp();
+    else showAccessGate();
   } catch {
     showAccessGate();
     $('gateError').textContent = 'Tidak dapat terhubung ke server. Muat ulang halaman.';
@@ -204,7 +201,6 @@ async function fetchFullState() {
     state.locks = data.locks || {};
     state.onlineCount = data.onlineCount || 1;
     state.isAdmin = Boolean(data.isAdmin);
-    if (!state.isAdmin && state.activeView === 'settings') state.activeView = 'list';
     renderAll();
   } catch (err) {
     if (err.code === 'MEETING_CODE_REQUIRED' || err.status === 401) {
@@ -258,9 +254,7 @@ function connectWebSocket() {
 }
 
 function wsSend(payload) {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(payload));
-  }
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
 }
 
 function updateConnStatus(status, text) {
@@ -290,7 +284,7 @@ function handleWsMessage(msg) {
     case 'locks':
       state.locks = msg.locks || {};
       renderList();
-      if (state.activeView === 'document') renderDocumentTab();
+      if (state.activeView === 'document') renderDocumentView();
       break;
 
     case 'lock_denied':
@@ -314,7 +308,7 @@ function handleWsMessage(msg) {
       if (msg.stats) state.stats = msg.stats;
       if (msg.auditEntry) state.auditLogs.unshift(msg.auditEntry);
       renderAll();
-      showToast(`Tanda tangan ${msg.signatory.name} diatur ulang.`);
+      showToast(`Tanda tangan ${msg.signatory.name} dihapus oleh Panitia.`);
       break;
 
     case 'signatory_added':
@@ -340,6 +334,14 @@ function handleWsMessage(msg) {
       renderAll();
       break;
 
+    case 'full_reset':
+      if (Array.isArray(msg.signatories)) state.signatories = msg.signatories;
+      if (msg.stats) state.stats = msg.stats;
+      if (msg.auditEntry) state.auditLogs.unshift(msg.auditEntry);
+      renderAll();
+      showToast('Seluruh data telah direset oleh Panitia.');
+      break;
+
     case 'settings_updated':
       if (msg.settings) state.settings = msg.settings;
       if (msg.auditEntry) state.auditLogs.unshift(msg.auditEntry);
@@ -363,24 +365,25 @@ function renderAll() {
   renderChrome();
   renderSummary();
   renderList();
-  if (state.activeView === 'document') renderDocumentTab();
-  if (state.activeView === 'settings' && state.isAdmin) renderSettingsTab();
+  if (state.activeView === 'document') renderDocumentView();
 }
 
 function renderChrome() {
   const admin = state.isAdmin;
   $('adminBadge').classList.toggle('hidden', !admin);
   $('lockedBadge').classList.toggle('hidden', !state.settings.locked);
-  $('adminSettingsTab').classList.toggle('hidden', !admin);
-  $('adminSettingsMobileTab').classList.toggle('hidden', !admin);
   $('adminEnterBtn').classList.toggle('hidden', admin);
+  $('adminSettingsBtn').classList.toggle('hidden', !admin);
   $('adminExitBtn').classList.toggle('hidden', !admin);
 
   const canAdd = admin || (state.settings.allowSelfAdd && !state.settings.locked);
   $('addParticipantBtn').classList.toggle('hidden', !canAdd);
 
-  $('quickDocxLink').href = buildDownloadUrl('/api/export/berita-acara.docx');
-  $('quickPdfLink').href = buildDownloadUrl('/api/export/berita-acara.pdf');
+  $('dlFullDocx').href = buildDownloadUrl('/api/export/berita-acara.docx');
+  $('dlFullPdf').href = buildDownloadUrl('/api/export/berita-acara.pdf');
+  $('dlRekapCsv').href = buildDownloadUrl('/api/export/rekap.csv');
+  $('dlZipDocx').href = buildDownloadUrl('/api/export/bundle-docx.zip');
+  $('dlZipPdf').href = buildDownloadUrl('/api/export/bundle-pdf.zip');
 }
 
 function renderSummary() {
@@ -404,12 +407,7 @@ function getFilteredSignatories() {
       if (state.statusFilter === 'signed' && !s.signed) return false;
       if (state.statusFilter === 'unsigned' && s.signed) return false;
       if (!q) return true;
-      return [
-        s.isLeader ? 'bupati pimpinan' : String(s.rowNumber),
-        s.name,
-        s.role,
-        s.representedBy ? s.representedBy.name : '',
-      ]
+      return [s.isLeader ? 'bupati pimpinan' : String(s.rowNumber), s.name, s.role]
         .join(' ')
         .toLowerCase()
         .includes(q);
@@ -444,18 +442,11 @@ function renderList() {
         ? `<div class="r-no-leader">Pimpinan</div>`
         : `<div class="r-no">${String(s.rowNumber).padStart(2, '0')}</div>`;
 
-      const repHtml =
-        s.representedBy && s.representedBy.name
-          ? `<div class="r-rep">a.n. ${esc(s.representedBy.name)}${
-              s.representedBy.role ? ` (${esc(s.representedBy.role)})` : ''
-            }</div>`
-          : '';
-
       let sigCell = '';
       if (s.signed && s.signatureUrl) {
         sigCell = `
           <div class="r-sig-cell">
-            <button type="button" class="r-sig-btn" data-action="detail" data-id="${esc(s.id)}" title="Lihat detail &amp; unduh bukti">
+            <button type="button" class="r-sig-btn" data-action="detail" data-id="${esc(s.id)}" title="Lihat bukti &amp; unduh">
               <img src="${esc(s.signatureUrl)}" alt="TTD ${esc(s.name)}" loading="lazy" />
             </button>
             <span class="r-sig-time">${esc(formatWitaTime(s.signedAt))}</span>
@@ -469,11 +460,8 @@ function renderList() {
 
       let actionCell = '';
       if (s.signed) {
-        const docxUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(s.id)}.docx`);
-        const pdfUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(s.id)}.pdf`);
         actionCell = `
-          <a class="text-btn" href="${esc(docxUrl)}">Word</a>
-          <a class="text-btn" href="${esc(pdfUrl)}">PDF</a>
+          <button type="button" class="text-btn" data-action="detail" data-id="${esc(s.id)}">Bukti</button>
           ${
             state.isAdmin
               ? `<button type="button" class="text-btn" data-action="edit" data-id="${esc(s.id)}">Edit</button>
@@ -503,7 +491,6 @@ function renderList() {
           <div class="r-person">
             <div class="r-name">${esc(s.name)}</div>
             <div class="r-role">${esc(s.role)}</div>
-            ${repHtml}
           </div>
           ${sigCell}
           <div class="r-actions">${actionCell}</div>
@@ -513,13 +500,7 @@ function renderList() {
     .join('');
 }
 
-function renderDocumentTab() {
-  $('dlFullDocx').href = buildDownloadUrl('/api/export/berita-acara.docx');
-  $('dlFullPdf').href = buildDownloadUrl('/api/export/berita-acara.pdf');
-  $('dlZipDocx').href = buildDownloadUrl('/api/export/bundle-docx.zip');
-  $('dlZipPdf').href = buildDownloadUrl('/api/export/bundle-pdf.zip');
-  $('dlRekapCsv').href = buildDownloadUrl('/api/export/rekap.csv');
-
+function renderDocumentView() {
   renderOfficialDocument({
     container: $('documentSheetContainer'),
     documentMeta: state.documentMeta,
@@ -530,71 +511,21 @@ function renderDocumentTab() {
   });
 }
 
-async function renderSettingsTab() {
-  if (!state.isAdmin) return;
-  renderAuditList();
-  try {
-    const s = await apiFetch('/api/admin/settings');
-    $('adminMeetingCodeInput').value = s.meetingCode || '';
-    $('adminRequireCodeToggle').checked = Boolean(s.requireMeetingCode);
-    $('adminAllowSelfAddToggle').checked = Boolean(s.allowSelfAdd);
-    $('adminLockToggle').checked = Boolean(s.locked);
-  } catch {
-    // ignore
-  }
-}
-
-function renderAuditList() {
-  const list = $('activityList');
-  if (!list) return;
-  if (!state.auditLogs.length) {
-    list.innerHTML = `<div class="empty-state">Belum ada aktivitas.</div>`;
-    return;
-  }
-  list.innerHTML = state.auditLogs
-    .slice(0, 50)
-    .map(
-      (entry) => `
-      <div class="activity-item">
-        <p class="activity-summary">${esc(entry.summary)}</p>
-        <div class="activity-meta">${esc(formatWitaFull(entry.timestamp))}${
-          entry.verificationHash ? ` · <span class="mono">${esc(entry.verificationHash)}</span>` : ''
-        }</div>
-      </div>
-    `
-    )
-    .join('');
-}
-
 function switchView(viewName) {
-  if (viewName === 'settings' && !state.isAdmin) viewName = 'list';
   state.activeView = viewName;
-
-  document.querySelectorAll('.nav-link, .mobile-tab').forEach((btn) => {
+  document.querySelectorAll('.switch-tab').forEach((btn) => {
     const active = btn.dataset.view === viewName;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-selected', String(active));
   });
 
-  $('viewList').classList.toggle('hidden', viewName !== 'list');
-  $('viewDocument').classList.toggle('hidden', viewName !== 'document');
-  $('viewSettings').classList.toggle('hidden', viewName !== 'settings');
+  const isDoc = viewName === 'document';
+  $('viewList').classList.toggle('hidden', isDoc);
+  $('listControls').classList.toggle('hidden', isDoc);
+  $('viewDocument').classList.toggle('hidden', !isDoc);
+  $('docHintBar').classList.toggle('hidden', !isDoc);
 
-  if (viewName === 'document') renderDocumentTab();
-  if (viewName === 'settings') renderSettingsTab();
-}
-
-// ===== READ DOCUMENT MODAL =====
-function openReadDocModal() {
-  const m = state.documentMeta;
-  if (!m) return;
-  $('readDocBody').innerHTML = `
-    <h4>${m.titleLines.map(esc).join('<br />')}</h4>
-    ${m.paragraphsBeforePoints.map((p) => `<p>${esc(p)}</p>`).join('')}
-    <ol>${m.agreementPoints.map((pt) => `<li>${esc(pt)}</li>`).join('')}</ol>
-    <p>${esc(m.closingParagraph)}</p>
-  `;
-  $('readDocModal').classList.remove('hidden');
+  if (isDoc) renderDocumentView();
 }
 
 // ===== SIGNING MODAL =====
@@ -644,12 +575,6 @@ function openSignModal(signatoryId) {
     : `Penandatanganan · No. ${sig.rowNumber}`;
   $('signModalTitle').textContent = sig.name;
   $('signModalRole').textContent = sig.role;
-
-  document.querySelector('input[name="attendanceMode"][value="direct"]').checked = true;
-  $('representativeFields').classList.add('hidden');
-  $('repNameInput').value = '';
-  $('repRoleInput').value = '';
-  $('signConsentCheck').checked = true;
   $('signError').classList.add('hidden');
 
   sigPad.clear();
@@ -701,26 +626,6 @@ async function submitSignature() {
   const errEl = $('signError');
   errEl.classList.add('hidden');
 
-  if (!$('signConsentCheck').checked) {
-    errEl.textContent = 'Centang persetujuan Berita Acara terlebih dahulu.';
-    errEl.classList.remove('hidden');
-    return;
-  }
-
-  const attendanceMode = document.querySelector('input[name="attendanceMode"]:checked')?.value || 'direct';
-  let representedBy = null;
-  if (attendanceMode === 'representative') {
-    const repName = $('repNameInput').value.trim();
-    const repRole = $('repRoleInput').value.trim();
-    if (repName.length < 2) {
-      errEl.textContent = 'Masukkan nama lengkap perwakilan (a.n.).';
-      errEl.classList.remove('hidden');
-      $('repNameInput').focus();
-      return;
-    }
-    representedBy = { name: repName, role: repRole };
-  }
-
   let signatureDataUrl = null;
   if (state.signingMode === 'draw') {
     signatureDataUrl = sigPad.exportTrimmedPng();
@@ -750,7 +655,6 @@ async function submitSignature() {
       body: JSON.stringify({
         signatureDataUrl,
         method: state.signingMode,
-        representedBy,
       }),
     });
 
@@ -759,7 +663,6 @@ async function submitSignature() {
     closeSignModal();
     renderAll();
     showToast(`Tanda tangan ${res.signatory.name} tersimpan.`);
-    openDetailModal(res.signatory.id);
   } catch (err) {
     errEl.textContent = err.message || 'Gagal menyimpan tanda tangan.';
     errEl.classList.remove('hidden');
@@ -778,11 +681,6 @@ function openDetailModal(signatoryId) {
   $('detailModalTitle').textContent = sig.name;
   $('detailModalRole').textContent = sig.role;
 
-  const attendanceText =
-    sig.representedBy && sig.representedBy.name
-      ? `a.n. ${sig.representedBy.name}${sig.representedBy.role ? ` (${sig.representedBy.role})` : ''}`
-      : 'Hadir langsung';
-
   const docxUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(sig.id)}.docx`);
   const pdfUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(sig.id)}.pdf`);
   const pngUrl = buildDownloadUrl(`/api/export/signature/${encodeURIComponent(sig.id)}.png`);
@@ -794,7 +692,6 @@ function openDetailModal(signatoryId) {
     <div class="detail-meta-list">
       <div class="detail-meta-row"><span>Nomor Urut</span><span class="mono">${sig.isLeader ? 'Pimpinan' : `No. ${sig.rowNumber}`}</span></div>
       <div class="detail-meta-row"><span>Waktu</span><span>${esc(formatWitaFull(sig.signedAt))}</span></div>
-      <div class="detail-meta-row"><span>Kehadiran</span><span>${esc(attendanceText)}</span></div>
       <div class="detail-meta-row"><span>Verifikasi</span><span class="mono">${esc(sig.verificationHash || '-')}</span></div>
     </div>
     <div class="detail-dl-row">
@@ -837,11 +734,49 @@ async function loadQrCode() {
   }
 }
 
+// ===== PANITIA SETTINGS MODAL =====
+async function openSettingsModal() {
+  if (!state.isAdmin) return;
+  $('adminSaveMsg').classList.add('hidden');
+  $('settingsModal').classList.remove('hidden');
+  renderAuditList();
+  try {
+    const s = await apiFetch('/api/admin/settings');
+    $('adminMeetingCodeInput').value = s.meetingCode || '';
+    $('adminRequireCodeToggle').checked = Boolean(s.requireMeetingCode);
+    $('adminAllowSelfAddToggle').checked = Boolean(s.allowSelfAdd);
+    $('adminLockToggle').checked = Boolean(s.locked);
+    $('adminNewPinInput').value = '';
+  } catch {
+    // ignore
+  }
+}
+
+function renderAuditList() {
+  const list = $('activityList');
+  if (!list) return;
+  if (!state.auditLogs.length) {
+    list.innerHTML = `<div class="empty-state" style="padding:18px">Belum ada aktivitas.</div>`;
+    return;
+  }
+  list.innerHTML = state.auditLogs
+    .slice(0, 30)
+    .map(
+      (entry) => `
+      <div class="activity-item">
+        <p class="activity-summary">${esc(entry.summary)}</p>
+        <div class="activity-meta">${esc(formatWitaFull(entry.timestamp))}</div>
+      </div>
+    `
+    )
+    .join('');
+}
+
 // ===== ADMIN ACTIONS =====
 async function clearSignatorySignature(id) {
   const sig = state.signatories.find((s) => s.id === id);
   if (!sig) return;
-  if (!window.confirm(`Atur ulang tanda tangan ${sig.name}?`)) return;
+  if (!window.confirm(`Hapus / reset tanda tangan ${sig.name}?`)) return;
   try {
     await apiFetch(`/api/admin/signatories/${encodeURIComponent(id)}/clear`, {
       method: 'POST',
@@ -856,7 +791,7 @@ async function clearSignatorySignature(id) {
 async function deleteCustomSignatory(id) {
   const sig = state.signatories.find((s) => s.id === id);
   if (!sig) return;
-  if (!window.confirm(`Hapus peserta tambahan "${sig.name}"?`)) return;
+  if (!window.confirm(`Hapus peserta tambahan "${sig.name}" dari daftar?`)) return;
   try {
     await apiFetch(`/api/admin/signatories/${encodeURIComponent(id)}`, { method: 'DELETE' });
     showToast(`Peserta ${sig.name} dihapus.`);
@@ -880,7 +815,7 @@ async function exitAdminMode() {
   state.isAdmin = false;
   state.adminToken = '';
   localStorage.removeItem(STORAGE_KEYS.adminToken);
-  if (state.activeView === 'settings') switchView('list');
+  $('settingsModal').classList.add('hidden');
   renderAll();
   showToast('Keluar dari Mode Panitia.');
 }
@@ -918,6 +853,30 @@ function bindEvents() {
     }
   });
 
+  // Export Dropdown
+  $('exportMenuBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('exportMenuPanel').classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (!$('exportDropdown').contains(e.target)) {
+      $('exportMenuPanel').classList.add('hidden');
+    }
+  });
+  $('exportMenuPanel').addEventListener('click', () => {
+    $('exportMenuPanel').classList.add('hidden');
+  });
+  $('printDocBtn').addEventListener('click', () => {
+    switchView('document');
+    setTimeout(() => window.print(), 180);
+  });
+
+  // Switch Daftar vs Naskah Langsung
+  document.querySelectorAll('.switch-tab').forEach((btn) => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+
+  // Admin Login & Settings
   const openAdminLogin = () => {
     $('adminLoginError').classList.add('hidden');
     $('adminPinInput').value = '';
@@ -928,6 +887,9 @@ function bindEvents() {
   $('adminEnterBtn').addEventListener('click', openAdminLogin);
   $('closeAdminLoginBtn').addEventListener('click', () => $('adminLoginModal').classList.add('hidden'));
   $('cancelAdminLoginBtn').addEventListener('click', () => $('adminLoginModal').classList.add('hidden'));
+  $('adminSettingsBtn').addEventListener('click', openSettingsModal);
+  $('closeSettingsBtn').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
+  $('closeSettingsDoneBtn').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
   $('adminExitBtn').addEventListener('click', exitAdminMode);
 
   $('adminLoginForm').addEventListener('submit', async (e) => {
@@ -947,82 +909,13 @@ function bindEvents() {
       $('adminLoginModal').classList.add('hidden');
       if ($('appShell').classList.contains('hidden')) await enterMainApp();
       else renderAll();
-      showToast('Mode Panitia aktif.');
+      showToast('Mode Panitia aktif. Tombol Edit, Reset, dan Hapus sekarang tersedia.');
     } catch (err) {
       errEl.textContent = err.message || 'PIN Panitia tidak sesuai.';
       errEl.classList.remove('hidden');
     }
   });
 
-  document.querySelectorAll('.nav-link, .mobile-tab').forEach((btn) => {
-    btn.addEventListener('click', () => switchView(btn.dataset.view));
-  });
-
-  $('readDocBtn').addEventListener('click', openReadDocModal);
-  $('closeReadDocBtn').addEventListener('click', () => $('readDocModal').classList.add('hidden'));
-  $('closeReadDocDoneBtn').addEventListener('click', () => $('readDocModal').classList.add('hidden'));
-
-  const searchInput = $('searchInput');
-  const clearBtn = $('clearSearchBtn');
-  searchInput.addEventListener('input', () => {
-    state.searchQuery = searchInput.value;
-    clearBtn.classList.toggle('hidden', !state.searchQuery);
-    renderList();
-  });
-  clearBtn.addEventListener('click', () => {
-    state.searchQuery = '';
-    searchInput.value = '';
-    clearBtn.classList.add('hidden');
-    renderList();
-    searchInput.focus();
-  });
-
-  document.querySelectorAll('.seg-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      state.statusFilter = btn.dataset.status;
-      document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b === btn));
-      renderList();
-    });
-  });
-
-  document.addEventListener('click', (e) => {
-    const trigger = e.target.closest('[data-action]');
-    if (trigger) {
-      const { action, id } = trigger.dataset;
-      if (action === 'sign') openSignModal(id);
-      else if (action === 'detail') openDetailModal(id);
-      else if (action === 'clear') clearSignatorySignature(id);
-      else if (action === 'edit') openEditModal(id);
-      else if (action === 'delete') deleteCustomSignatory(id);
-      return;
-    }
-
-    const docTrigger = e.target.closest('[data-doc-action]');
-    if (docTrigger) {
-      const { docAction, id } = docTrigger.dataset;
-      if (docAction === 'sign') openSignModal(id);
-      else if (docAction === 'detail') openDetailModal(id);
-    }
-  });
-
-  $('printDocBtn').addEventListener('click', () => window.print());
-
-  // QR Modal
-  $('qrBtn').addEventListener('click', openQrModal);
-  $('closeQrModalBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
-  $('closeQrDoneBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
-  $('qrIncludeCodeCheck').addEventListener('change', loadQrCode);
-  $('copyQrUrlBtn').addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText($('qrUrlInput').value);
-    } catch {
-      $('qrUrlInput').select();
-      document.execCommand('copy');
-    }
-    showToast('Tautan disalin.');
-  });
-
-  // Save Panitia Settings
   $('saveAdminSettingsBtn').addEventListener('click', async () => {
     const msgEl = $('adminSaveMsg');
     msgEl.classList.add('hidden');
@@ -1059,37 +952,96 @@ function bindEvents() {
     }
   });
 
-  // Signing Modal Controls
+  $('resetAllDataBtn').addEventListener('click', async () => {
+    if (!window.confirm('Yakin hapus SEMUA tanda tangan & peserta tambahan (kembali ke 0 / 55)?')) return;
+    try {
+      await apiFetch('/api/admin/reset-all', { method: 'POST' });
+      $('settingsModal').classList.add('hidden');
+    } catch (err) {
+      showToast(err.message || 'Gagal mereset data.');
+    }
+  });
+
+  // Search & Filter
+  const searchInput = $('searchInput');
+  const clearBtn = $('clearSearchBtn');
+  searchInput.addEventListener('input', () => {
+    state.searchQuery = searchInput.value;
+    clearBtn.classList.toggle('hidden', !state.searchQuery);
+    renderList();
+  });
+  clearBtn.addEventListener('click', () => {
+    state.searchQuery = '';
+    searchInput.value = '';
+    clearBtn.classList.add('hidden');
+    renderList();
+    searchInput.focus();
+  });
+
+  document.querySelectorAll('.seg-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.statusFilter = btn.dataset.status;
+      document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b === btn));
+      renderList();
+    });
+  });
+
+  // Row & Document Clicks
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-action]');
+    if (trigger) {
+      const { action, id } = trigger.dataset;
+      if (action === 'sign') openSignModal(id);
+      else if (action === 'detail') openDetailModal(id);
+      else if (action === 'clear') clearSignatorySignature(id);
+      else if (action === 'edit') openEditModal(id);
+      else if (action === 'delete') deleteCustomSignatory(id);
+      return;
+    }
+
+    const docTrigger = e.target.closest('[data-doc-action]');
+    if (docTrigger) {
+      const { docAction, id } = docTrigger.dataset;
+      if (docAction === 'sign') openSignModal(id);
+      else if (docAction === 'detail') openDetailModal(id);
+    }
+  });
+
+  // QR Modal
+  $('qrBtn').addEventListener('click', openQrModal);
+  $('closeQrModalBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
+  $('closeQrDoneBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
+  $('qrIncludeCodeCheck').addEventListener('change', loadQrCode);
+  $('copyQrUrlBtn').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('qrUrlInput').value);
+    } catch {
+      $('qrUrlInput').select();
+      document.execCommand('copy');
+    }
+    showToast('Tautan disalin.');
+  });
+
+  // Signing Modal
   $('closeSignModalBtn').addEventListener('click', closeSignModal);
   $('cancelSignBtn').addEventListener('click', closeSignModal);
   $('submitSignBtn').addEventListener('click', submitSignature);
 
-  document.querySelectorAll('input[name="attendanceMode"]').forEach((radio) => {
-    radio.addEventListener('change', () => {
-      const isRep = radio.value === 'representative' && radio.checked;
-      $('representativeFields').classList.toggle('hidden', !isRep);
-      if (isRep) $('repNameInput').focus();
-    });
-  });
-
   document.querySelectorAll('.mode-tab').forEach((btn) => {
     btn.addEventListener('click', () => setSignMode(btn.dataset.signMode));
   });
-
   document.querySelectorAll('.swatch').forEach((sw) => {
     sw.addEventListener('click', () => {
       document.querySelectorAll('.swatch').forEach((s) => s.classList.toggle('active', s === sw));
       sigPad.setColor(sw.dataset.ink);
     });
   });
-
   document.querySelectorAll('[data-thickness]').forEach((chip) => {
     chip.addEventListener('click', () => {
       document.querySelectorAll('[data-thickness]').forEach((c) => c.classList.toggle('active', c === chip));
       sigPad.setThickness(chip.dataset.thickness);
     });
   });
-
   $('padUndoBtn').addEventListener('click', () => sigPad.undo());
   $('padClearBtn').addEventListener('click', () => sigPad.clear());
   $('padFullscreenBtn').addEventListener('click', enterPadFullscreen);
@@ -1150,12 +1102,14 @@ function bindEvents() {
     }
   }
 
+  // Detail Modal
   $('closeDetailModalBtn').addEventListener('click', closeDetailModal);
   $('closeDetailDoneBtn').addEventListener('click', closeDetailModal);
   $('detailResetSigBtn').addEventListener('click', () => {
     if (state.detailSignatoryId) clearSignatorySignature(state.detailSignatoryId);
   });
 
+  // Add Participant Modal
   $('addParticipantBtn').addEventListener('click', () => {
     $('addError').classList.add('hidden');
     $('newPartName').value = '';
@@ -1193,6 +1147,7 @@ function bindEvents() {
     }
   });
 
+  // Edit Modal
   $('closeEditModalBtn').addEventListener('click', () => $('editModal').classList.add('hidden'));
   $('cancelEditBtn').addEventListener('click', () => $('editModal').classList.add('hidden'));
   $('editSignatoryForm').addEventListener('submit', async (e) => {
@@ -1220,10 +1175,10 @@ function bindEvents() {
     if ($('padCanvasWrap').classList.contains('is-fullscreen')) exitPadFullscreen();
     else if (!$('signModal').classList.contains('hidden')) closeSignModal();
     else if (!$('detailModal').classList.contains('hidden')) closeDetailModal();
-    else if (!$('readDocModal').classList.contains('hidden')) $('readDocModal').classList.add('hidden');
     else if (!$('addModal').classList.contains('hidden')) $('addModal').classList.add('hidden');
     else if (!$('qrModal').classList.contains('hidden')) $('qrModal').classList.add('hidden');
     else if (!$('adminLoginModal').classList.contains('hidden')) $('adminLoginModal').classList.add('hidden');
+    else if (!$('settingsModal').classList.contains('hidden')) $('settingsModal').classList.add('hidden');
     else if (!$('editModal').classList.contains('hidden')) $('editModal').classList.add('hidden');
   });
 }

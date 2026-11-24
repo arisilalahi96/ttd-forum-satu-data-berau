@@ -2,7 +2,7 @@
 title: e-TTD Berita Acara Forum Satu Data Berau 2026
 emoji: ✍️
 colorFrom: blue
-colorTo: slate
+colorTo: gray
 sdk: docker
 app_port: 7860
 ---

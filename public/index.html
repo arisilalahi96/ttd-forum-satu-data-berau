@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
-  <!-- ===== ACCESS GATE (KODE RAPAT) ===== -->
+  <!-- ===== ACCESS GATE (KODE AKSES) ===== -->
   <section id="accessGate" class="gate-screen hidden" aria-label="Masuk Ruang Penandatanganan">
     <div class="gate-box">
       <div class="gate-header-accent"></div>
@@ -36,20 +36,16 @@
             <span class="gate-info-label">Tempat</span>
             <span class="gate-info-val">Ruang Rapat RKPD Bapperida Kabupaten Berau</span>
           </div>
-          <div class="gate-info-item gate-info-row-inline">
-            <span class="gate-info-label">Status Tanda Tangan</span>
-            <strong class="gate-info-stat mono" id="gateProgress">—</strong>
-          </div>
         </div>
 
         <form id="gateForm" autocomplete="off">
           <div class="field-group">
-            <label for="gateCodeInput" class="field-label">Kode Rapat Peserta</label>
+            <label for="gateCodeInput" class="field-label">Kode Akses</label>
             <input
               id="gateCodeInput"
               type="text"
               class="input-control input-code gate-code-input"
-              placeholder="Ketik Kode Rapat..."
+              placeholder="Masukkan Kode Akses..."
               required
               maxlength="24"
               autofocus
@@ -428,7 +424,7 @@
       <div class="modal-body">
         <div class="settings-form">
           <div class="field-group">
-            <label for="adminMeetingCodeInput" class="field-label">Kode Rapat Peserta</label>
+            <label for="adminMeetingCodeInput" class="field-label">Kode Akses Peserta</label>
             <input id="adminMeetingCodeInput" type="text" class="input-control input-code" maxlength="20" />
           </div>
 
@@ -439,7 +435,7 @@
 
           <label class="check-row">
             <input type="checkbox" id="adminRequireCodeToggle" />
-            <span>Wajibkan Kode Rapat saat peserta masuk</span>
+            <span>Wajibkan Kode Akses saat peserta masuk</span>
           </label>
 
           <label class="check-row check-danger">

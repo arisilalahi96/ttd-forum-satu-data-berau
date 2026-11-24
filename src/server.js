@@ -100,7 +100,7 @@ async function startServer() {
   function requireParticipant(req, res, next) {
     if (!isValidParticipant(req)) {
       return res.status(401).json({
-        error: 'Kode Rapat diperlukan atau sudah berubah. Silakan masukkan Kode Rapat untuk melanjutkan.',
+        error: 'Kode Akses diperlukan atau sudah berubah. Silakan masukkan Kode Akses untuk melanjutkan.',
         code: 'MEETING_CODE_REQUIRED',
       });
     }
@@ -153,7 +153,7 @@ async function startServer() {
     const provided = normalizeCode(req.body && req.body.code);
     if (!provided || provided !== settings.meetingCode) {
       return res.status(401).json({
-        error: 'Kode Rapat tidak sesuai. Periksa kode yang diberikan oleh Panitia.',
+        error: 'Kode Akses tidak sesuai. Periksa kode yang diberikan oleh Panitia.',
       });
     }
     return res.json({

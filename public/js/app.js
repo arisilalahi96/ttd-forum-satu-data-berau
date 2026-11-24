@@ -168,7 +168,6 @@ async function bootstrap() {
     $('gateEventDate').textContent = [dateDetail?.value || 'Rabu, 25 November 2026', timeDetail?.value]
       .filter(Boolean)
       .join(' · ');
-    $('gateProgress').textContent = `${boot.stats.signed} / ${boot.stats.total} pejabat`;
 
     if (boot.authorized) await enterMainApp();
     else showAccessGate();
@@ -182,9 +181,6 @@ async function bootstrap() {
 function showAccessGate() {
   $('appShell').classList.add('hidden');
   $('accessGate').classList.remove('hidden');
-  if (state.stats) {
-    $('gateProgress').textContent = `${state.stats.signed} / ${state.stats.total} pejabat`;
-  }
   setTimeout(() => $('gateCodeInput')?.focus(), 50);
 }
 
@@ -871,7 +867,7 @@ function bindEvents() {
       localStorage.setItem(STORAGE_KEYS.sessionToken, res.token);
       await enterMainApp();
     } catch (err) {
-      errEl.textContent = err.message || 'Kode Rapat tidak sesuai.';
+      errEl.textContent = err.message || 'Kode Akses tidak sesuai.';
       errEl.classList.remove('hidden');
     } finally {
       btn.disabled = false;

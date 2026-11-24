@@ -4,7 +4,7 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
-const { cloneDefaultDocumentMeta, createInitialSignatories } = require('./seed');
+const { cloneDefaultDocumentMeta, createInitialSignatories, classifyInstansiGroup } = require('./seed');
 const { computeVerificationHash } = require('./utils/pngTools');
 const { normalizeCode } = require('./utils/formatters');
 
@@ -215,6 +215,8 @@ class ForumStore {
   getPublicSignatory(s) {
     return {
       ...s,
+      instansiGroup:
+        s.instansiGroup || classifyInstansiGroup(s.role, s.isRepresentative, s.isCustom),
       signatureUrl: s.signed ? `/api/signatures/${encodeURIComponent(s.id)}.png?v=${s.signatureVersion || 1}` : null,
     };
   }
@@ -372,6 +374,7 @@ class ForumStore {
       repOrder: null,
       isRepresentative: false,
       isCustom: true,
+      instansiGroup: classifyInstansiGroup(cleanRole, false, true),
       name: cleanName,
       role: cleanRole,
       roleLines: null,
@@ -419,6 +422,11 @@ class ForumStore {
 
     signatory.name = cleanName;
     signatory.role = cleanRole.replace(/\r?\n/g, ' — ');
+    signatory.instansiGroup = classifyInstansiGroup(
+      signatory.role,
+      signatory.isRepresentative,
+      signatory.isCustom
+    );
     if (signatory.isRepresentative) {
       const lines = cleanRole
         .split(/\r?\n|—/)

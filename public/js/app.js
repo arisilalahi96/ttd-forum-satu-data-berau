@@ -24,6 +24,7 @@ const state = {
 
   activeView: 'list', // 'list' | 'document'
   searchQuery: '',
+  instansiFilter: 'all',
   statusFilter: 'all',
   recentlySignedIds: new Set(),
 
@@ -412,9 +413,41 @@ function renderSummary() {
   $('progressBarFill').style.width = `${st.percentage}%`;
   $('progressBarTrack').setAttribute('aria-valuenow', String(st.percentage));
 
+  renderInstansiFilterOptions();
   const signedAll = state.signatories.filter((s) => s.signed).length;
-  $('countSigned').textContent = signedAll;
-  $('countUnsigned').textContent = state.signatories.length - signedAll;
+  const unsignedAll = state.signatories.length - signedAll;
+  const statusSel = $('statusFilterSelect');
+  if (statusSel && statusSel.options.length >= 3) {
+    statusSel.options[0].textContent = `Semua Status (${state.signatories.length})`;
+    statusSel.options[1].textContent = `Belum TTD (${unsignedAll})`;
+    statusSel.options[2].textContent = `Sudah TTD (${signedAll})`;
+  }
+}
+
+function renderInstansiFilterOptions() {
+  const sel = $('instansiFilter');
+  if (!sel) return;
+  const counts = new Map();
+  for (const s of state.signatories) {
+    const g = s.instansiGroup || (s.isRepresentative ? 'Perwakilan Unsur' : 'Lainnya');
+    counts.set(g, (counts.get(g) || 0) + 1);
+  }
+  const order = [
+    'Perwakilan Unsur',
+    'Badan, Inspektorat & Satpol PP',
+    'Dinas & RSUD',
+    'Kecamatan (Camat)',
+    'Peserta Tambahan',
+    'Lainnya',
+  ].filter((g) => counts.has(g));
+
+  const current = state.instansiFilter;
+  sel.innerHTML = [
+    `<option value="all">Semua Instansi (${state.signatories.length})</option>`,
+    ...order.map((g) => `<option value="${esc(g)}">${esc(g)} (${counts.get(g)})</option>`),
+  ].join('');
+  sel.value = counts.has(current) ? current : 'all';
+  state.instansiFilter = sel.value;
 }
 
 function getFilteredSignatories() {
@@ -424,6 +457,10 @@ function getFilteredSignatories() {
     .filter((s) => {
       if (state.statusFilter === 'signed' && !s.signed) return false;
       if (state.statusFilter === 'unsigned' && s.signed) return false;
+      if (state.instansiFilter !== 'all') {
+        const g = s.instansiGroup || (s.isRepresentative ? 'Perwakilan Unsur' : 'Lainnya');
+        if (g !== state.instansiFilter) return false;
+      }
       if (!q) return true;
       return [s.isRepresentative ? `unsur perwakilan ${s.repOrder}` : String(s.rowNumber), s.name, s.role]
         .join(' ')
@@ -464,7 +501,7 @@ function renderList() {
       if (s.signed && s.signatureUrl) {
         sigCell = `
           <div class="r-sig-cell">
-            <button type="button" class="r-sig-btn" data-action="detail" data-id="${esc(s.id)}" title="Lihat bukti &amp; unduh">
+            <button type="button" class="r-sig-well" data-action="detail" data-id="${esc(s.id)}" title="Lihat waktu verifikasi">
               <img src="${esc(s.signatureUrl)}" alt="TTD ${esc(s.name)}" loading="lazy" />
             </button>
             <span class="r-sig-time">${esc(formatWitaTime(s.signedAt))}</span>
@@ -478,16 +515,16 @@ function renderList() {
 
       let actionCell = '';
       if (s.signed) {
-        actionCell = `
-          <button type="button" class="text-btn" data-action="detail" data-id="${esc(s.id)}">Bukti</button>
-          ${
-            state.isAdmin
-              ? `<button type="button" class="text-btn" data-action="edit" data-id="${esc(s.id)}">Edit</button>
-                 <button type="button" class="text-btn text-btn-danger" data-action="clear" data-id="${esc(s.id)}">Reset</button>
-                 ${s.isCustom ? `<button type="button" class="text-btn text-btn-danger" data-action="delete" data-id="${esc(s.id)}">Hapus</button>` : ''}`
-              : ''
-          }
-        `;
+        if (state.isAdmin) {
+          actionCell = `
+            <button type="button" class="text-btn" data-action="detail" data-id="${esc(s.id)}">Unduh</button>
+            <button type="button" class="text-btn" data-action="edit" data-id="${esc(s.id)}">Edit</button>
+            <button type="button" class="text-btn text-btn-danger" data-action="clear" data-id="${esc(s.id)}">Reset</button>
+            ${s.isCustom ? `<button type="button" class="text-btn text-btn-danger" data-action="delete" data-id="${esc(s.id)}">Hapus</button>` : ''}
+          `;
+        } else {
+          actionCell = `<span class="status-done">&#10003; Tercatat</span>`;
+        }
       } else {
         const disabled = (state.settings.locked && !state.isAdmin) || isBusy;
         actionCell = `
@@ -531,7 +568,7 @@ function renderDocumentView() {
 
 function switchView(viewName) {
   state.activeView = viewName;
-  document.querySelectorAll('.switch-tab').forEach((btn) => {
+  document.querySelectorAll('.primary-tab').forEach((btn) => {
     const active = btn.dataset.view === viewName;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-selected', String(active));
@@ -539,9 +576,7 @@ function switchView(viewName) {
 
   const isDoc = viewName === 'document';
   $('viewList').classList.toggle('hidden', isDoc);
-  $('listControls').classList.toggle('hidden', isDoc);
   $('viewDocument').classList.toggle('hidden', !isDoc);
-  $('docHintBar').classList.toggle('hidden', !isDoc);
 
   if (isDoc) renderDocumentView();
 }
@@ -702,9 +737,16 @@ function openDetailModal(signatoryId) {
   const docxUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(sig.id)}.docx`);
   const pdfUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(sig.id)}.pdf`);
   const pngUrl = buildDownloadUrl(`/api/export/signature/${encodeURIComponent(sig.id)}.png`);
-  const adminPngBtn = state.isAdmin
-    ? `<a class="btn btn-outline btn-sm" href="${esc(pngUrl)}">PNG</a>`
-    : '';
+  // STRICT: Individual TTD downloads are Panitia-only! Participants can only download the full Berita Acara.
+  const adminDownloadBlock = state.isAdmin
+    ? `
+      <div class="detail-dl-row">
+        <a class="btn btn-primary btn-sm" href="${esc(docxUrl)}">Word (.docx)</a>
+        <a class="btn btn-primary btn-sm" href="${esc(pdfUrl)}">PDF (.pdf)</a>
+        <a class="btn btn-outline btn-sm" href="${esc(pngUrl)}">PNG</a>
+      </div>
+    `
+    : `<p class="muted" style="margin:0;font-size:12.5px">Gunakan menu <strong>Unduh</strong> di kanan atas untuk mengunduh Berita Acara lengkap (Word / PDF).</p>`;
 
   $('detailModalBody').innerHTML = `
     <div class="detail-sig-box">
@@ -715,11 +757,7 @@ function openDetailModal(signatoryId) {
       <div class="detail-meta-row"><span>Waktu</span><span>${esc(formatWitaFull(sig.signedAt))}</span></div>
       <div class="detail-meta-row"><span>Verifikasi</span><span class="mono">${esc(sig.verificationHash || '-')}</span></div>
     </div>
-    <div class="detail-dl-row ${state.isAdmin ? 'is-admin-dl' : ''}">
-      <a class="btn btn-primary btn-sm" href="${esc(docxUrl)}">Word (.docx)</a>
-      <a class="btn btn-primary btn-sm" href="${esc(pdfUrl)}">PDF (.pdf)</a>
-      ${adminPngBtn}
-    </div>
+    ${adminDownloadBlock}
   `;
 
   $('detailAdminActions').classList.toggle('hidden', !state.isAdmin);
@@ -912,8 +950,8 @@ function bindEvents() {
     setTimeout(() => window.print(), 180);
   });
 
-  // Switch Daftar vs Naskah Langsung
-  document.querySelectorAll('.switch-tab').forEach((btn) => {
+  // Primary View Tabs (Daftar Penandatangan vs Naskah Berita Acara)
+  document.querySelectorAll('.primary-tab').forEach((btn) => {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
 
@@ -1074,12 +1112,14 @@ function bindEvents() {
     searchInput.focus();
   });
 
-  document.querySelectorAll('.seg-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      state.statusFilter = btn.dataset.status;
-      document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b === btn));
-      renderList();
-    });
+  $('instansiFilter').addEventListener('change', (e) => {
+    state.instansiFilter = e.target.value;
+    renderList();
+  });
+
+  $('statusFilterSelect').addEventListener('change', (e) => {
+    state.statusFilter = e.target.value;
+    renderList();
   });
 
   // Row & Document Clicks

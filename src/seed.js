@@ -130,6 +130,24 @@ const RAW_LAMPIRAN_SIGNATORIES = [
   [46, 'Cipto Supratmono, SE', 'Camat Biduk-Biduk'],
 ];
 
+function classifyInstansiGroup(role, isRepresentative = false, isCustom = false) {
+  if (isRepresentative) return 'Perwakilan Unsur';
+  if (isCustom) return 'Peserta Tambahan';
+  const r = String(role || '').toLowerCase();
+  if (r.includes('camat')) return 'Kecamatan (Camat)';
+  if (r.includes('dinas') || r.includes('rsud') || r.includes('direktur')) return 'Dinas & RSUD';
+  if (
+    r.includes('badan') ||
+    r.includes('bps') ||
+    r.includes('inspektorat') ||
+    r.includes('satuan polisi') ||
+    r.includes('satpol')
+  ) {
+    return 'Badan, Inspektorat & Satpol PP';
+  }
+  return 'Lainnya';
+}
+
 function createInitialSignatories() {
   const list = [];
 
@@ -141,6 +159,7 @@ function createInitialSignatories() {
       repOrder: rep.slotOrder,
       isRepresentative: true,
       isCustom: false,
+      instansiGroup: 'Perwakilan Unsur',
       name: rep.name,
       role: rep.role,
       roleLines: [...rep.roleLines],
@@ -162,6 +181,7 @@ function createInitialSignatories() {
       repOrder: null,
       isRepresentative: false,
       isCustom: false,
+      instansiGroup: classifyInstansiGroup(role, false, false),
       name,
       role,
       roleLines: null,
@@ -186,6 +206,7 @@ module.exports = {
   DOCUMENT_META,
   RAW_REPRESENTATIVES,
   RAW_LAMPIRAN_SIGNATORIES,
+  classifyInstansiGroup,
   createInitialSignatories,
   cloneDefaultDocumentMeta,
 };

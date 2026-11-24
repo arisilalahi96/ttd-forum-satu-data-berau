@@ -317,7 +317,8 @@ async function startServer() {
     }
   });
 
-  app.get('/api/export/individual/:id.docx', requireParticipant, async (req, res) => {
+  // ===== INDIVIDUAL EXPORTS (PANITIA ONLY — PARTICIPANTS CANNOT DOWNLOAD INDIVIDUAL TTD) =====
+  app.get('/api/export/individual/:id.docx', requireAdmin, async (req, res) => {
     try {
       const sig = store.getSignatory(req.params.id);
       if (!sig) return res.status(404).json({ error: 'Data penandatangan tidak ditemukan.' });
@@ -338,7 +339,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/export/individual/:id.pdf', requireParticipant, async (req, res) => {
+  app.get('/api/export/individual/:id.pdf', requireAdmin, async (req, res) => {
     try {
       const sig = store.getSignatory(req.params.id);
       if (!sig) return res.status(404).json({ error: 'Data penandatangan tidak ditemukan.' });

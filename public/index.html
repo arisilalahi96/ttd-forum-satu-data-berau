@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap"
     rel="stylesheet"
   />
   <link rel="stylesheet" href="/css/styles.css" />
@@ -110,84 +110,91 @@
     </header>
 
     <main class="page-wrap">
-      <!-- Clean Document Masthead -->
-      <section class="doc-masthead no-print">
-        <div class="masthead-top">
-          <div>
-            <h1 class="page-title" id="mastheadTitle">Berita Acara Hasil Kesepakatan Forum Satu Data Kabupaten Berau 2026</h1>
-            <p class="page-subtitle" id="mastheadSubtitle">Rabu, 25 November 2026 · Ruang Rapat RKPD Bapperida Kabupaten Berau</p>
+      <div class="editorial-sheet">
+        <!-- Document Masthead -->
+        <section class="doc-masthead no-print">
+          <div class="masthead-top">
+            <div>
+              <p class="masthead-kicker">Pemerintah Kabupaten Berau</p>
+              <h1 class="page-title" id="mastheadTitle">Berita Acara Hasil Kesepakatan Forum Satu Data Kabupaten Berau 2026</h1>
+              <p class="page-subtitle" id="mastheadSubtitle">Rabu, 25 November 2026 · Pukul 08.00 – 12.00 WITA</p>
+            </div>
+            <div class="masthead-progress-text">
+              <div class="progress-fraction mono"><strong id="statSignedCount">0</strong><span>/</span><span id="statTotalCount">50</span></div>
+              <div class="progress-caption">menandatangani (<span id="statPct">0%</span>)</div>
+            </div>
           </div>
-          <div class="masthead-progress-text">
-            <span class="mono"><strong id="statSignedCount">0</strong> / <span id="statTotalCount">50</span></span>
-            <span class="muted">menandatangani (<span id="statPct">0%</span>)</span>
+          <div class="thin-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBarTrack">
+            <div class="thin-progress-bar" id="progressBarFill" style="width: 0%"></div>
           </div>
-        </div>
-        <div class="thin-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBarTrack">
-          <div class="thin-progress-bar" id="progressBarFill" style="width: 0%"></div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Unified Workspace Switcher: Daftar vs Naskah Langsung -->
-      <div class="workspace-bar no-print">
-        <div class="view-switch" role="tablist" aria-label="Pilih cara tampilan">
-          <button type="button" class="switch-tab active" data-view="list" role="tab" aria-selected="true">
-            Tampilan Daftar
+        <!-- Primary Editorial Underline View Tabs (Clearly Distinct From Filters Below) -->
+        <div class="primary-tabs no-print" role="tablist" aria-label="Mode tampilan">
+          <button type="button" class="primary-tab active" data-view="list" role="tab" aria-selected="true">
+            <svg class="tab-ico" viewBox="0 0 18 18" fill="none"><path d="M3.5 5h11M3.5 9h11M3.5 13h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span>Daftar Penandatangan</span>
           </button>
-          <button type="button" class="switch-tab" data-view="document" role="tab" aria-selected="false">
-            Tampilan Naskah
+          <button type="button" class="primary-tab" data-view="document" role="tab" aria-selected="false">
+            <svg class="tab-ico" viewBox="0 0 18 18" fill="none"><path d="M5 2.75h5.5L13.5 5.75v9.5H5v-12.5z" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/><path d="M10.5 2.75v3h3M7 9.25h4.2M7 11.85h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <span>Naskah Berita Acara</span>
           </button>
         </div>
 
-        <!-- Controls for List Mode -->
-        <div id="listControls" class="list-controls">
-          <div class="search-wrap">
-            <input
-              id="searchInput"
-              type="search"
-              class="search-input"
-              placeholder="Cari nama atau OPD..."
-              autocomplete="off"
-            />
-            <button type="button" id="clearSearchBtn" class="search-clear hidden" aria-label="Hapus">&times;</button>
+        <!-- ===== MODE 1: DAFTAR PENANDATANGAN ===== -->
+        <section id="viewList">
+          <div class="filter-bar no-print">
+            <div class="search-wrap">
+              <svg class="search-ico" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12 12l3.2 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input
+                id="searchInput"
+                type="search"
+                class="search-input"
+                placeholder="Cari nama pejabat atau instansi..."
+                autocomplete="off"
+              />
+              <button type="button" id="clearSearchBtn" class="search-clear hidden" aria-label="Hapus">&times;</button>
+            </div>
+
+            <div class="filter-selects">
+              <select id="instansiFilter" class="select-control" aria-label="Filter kelompok instansi">
+                <option value="all">Semua Instansi</option>
+              </select>
+
+              <select id="statusFilterSelect" class="select-control select-status" aria-label="Filter status tanda tangan">
+                <option value="all">Semua Status</option>
+                <option value="unsigned">Belum TTD</option>
+                <option value="signed">Sudah TTD</option>
+              </select>
+
+              <button type="button" id="addParticipantBtn" class="btn btn-outline btn-sm hidden">+ Tambah</button>
+            </div>
           </div>
 
-          <div class="seg-filter" role="group" aria-label="Filter status">
-            <button type="button" class="seg-btn active" data-status="all">Semua</button>
-            <button type="button" class="seg-btn" data-status="unsigned">Belum <span class="mono" id="countUnsigned">55</span></button>
-            <button type="button" class="seg-btn" data-status="signed">Sudah <span class="mono" id="countSigned">0</span></button>
+          <div class="ledger">
+            <div class="ledger-head">
+              <div class="c-no">No</div>
+              <div class="c-person">Nama &amp; Lembaga / Instansi / Jabatan</div>
+              <div class="c-sig">Tanda Tangan</div>
+              <div class="c-act">Aksi</div>
+            </div>
+            <div id="signatoriesList" class="ledger-body" aria-live="polite"></div>
+            <div id="emptyState" class="empty-state hidden">
+              Tidak ditemukan nama yang sesuai dengan pencarian atau filter instansi.
+            </div>
           </div>
+        </section>
 
-          <button type="button" id="addParticipantBtn" class="btn btn-outline btn-sm hidden">+ Tambah</button>
-        </div>
-
-        <!-- Hint for Document Mode -->
-        <div id="docHintBar" class="doc-hint-bar hidden">
-          Klik langsung pada kolom tanda tangan di naskah untuk menandatangani atau melihat bukti.
-        </div>
+        <!-- ===== MODE 2: NASKAH BERITA ACARA (LIVE A4) ===== -->
+        <section id="viewDocument" class="hidden">
+          <p class="doc-hint-line no-print">
+            Klik langsung pada kolom tanda tangan di naskah untuk membubuhkan tanda tangan atau melihat waktu verifikasi.
+          </p>
+          <div class="paper-tray">
+            <div id="documentSheetContainer" class="document-stage"></div>
+          </div>
+        </section>
       </div>
-
-      <!-- ===== MODE 1: TAMPILAN DAFTAR ===== -->
-      <section id="viewList">
-        <div class="ledger">
-          <div class="ledger-head">
-            <div class="c-no">No</div>
-            <div class="c-person">Nama &amp; Jabatan / Instansi</div>
-            <div class="c-sig">Tanda Tangan</div>
-            <div class="c-act">Aksi</div>
-          </div>
-          <div id="signatoriesList" class="ledger-body" aria-live="polite"></div>
-          <div id="emptyState" class="empty-state hidden">
-            Tidak ditemukan nama yang sesuai. Hubungi Panitia jika nama belum terdaftar.
-          </div>
-        </div>
-      </section>
-
-      <!-- ===== MODE 2: TAMPILAN NASKAH LANGSUNG (F4) ===== -->
-      <section id="viewDocument" class="hidden">
-        <div class="paper-tray">
-          <div id="documentSheetContainer" class="document-stage"></div>
-        </div>
-      </section>
     </main>
   </div>
 

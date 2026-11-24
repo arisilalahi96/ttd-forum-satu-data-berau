@@ -322,7 +322,7 @@ async function startServer() {
       const sig = store.getSignatory(req.params.id);
       if (!sig) return res.status(404).json({ error: 'Data penandatangan tidak ditemukan.' });
       const pngBuf = store.getSignatureBuffer(sig.id);
-      const buf = await generateIndividualDocx(sig, pngBuf);
+      const buf = await generateIndividualDocx(sig, pngBuf, store.getDocumentMeta());
       res.setHeader(
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -343,7 +343,7 @@ async function startServer() {
       const sig = store.getSignatory(req.params.id);
       if (!sig) return res.status(404).json({ error: 'Data penandatangan tidak ditemukan.' });
       const pngBuf = store.getSignatureBuffer(sig.id);
-      const buf = await generateIndividualPdf(sig, pngBuf);
+      const buf = await generateIndividualPdf(sig, pngBuf, store.getDocumentMeta());
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(
         'Content-Disposition',
@@ -509,6 +509,20 @@ async function startServer() {
       res.json({ ok: true, ...result });
     } catch (err) {
       res.status(500).json({ error: err.message || 'Gagal mereset data.' });
+    }
+  });
+
+  app.patch('/api/admin/document', requireAdmin, async (req, res) => {
+    try {
+      const result = await store.updateDocumentMeta(req.body || {});
+      hub.broadcast({
+        type: 'document_updated',
+        documentMeta: result.documentMeta,
+        auditEntry: result.auditEntry,
+      });
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      res.status(400).json({ error: err.message || 'Gagal menyimpan teks naskah.' });
     }
   });
 

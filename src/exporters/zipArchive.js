@@ -7,22 +7,18 @@ const { formatWitaDateTime, sanitizeFilename } = require('../utils/formatters');
 
 function csvEscape(val) {
   const s = String(val ?? '');
-  if (/[",\n\r]/.test(s)) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
 
 function generateRekapCsv(store) {
   const headers = [
+    'Bagian',
     'No',
-    'Kategori',
-    'Nama Pejabat',
-    'Jabatan / Instansi',
+    'Nama',
+    'Lembaga / Instansi / Jabatan',
     'Status TTD',
     'Metode TTD',
-    'Mewakili (a.n.)',
-    'Jabatan Perwakilan',
     'Waktu TTD (WITA)',
     'Kode Verifikasi',
   ];
@@ -31,14 +27,12 @@ function generateRekapCsv(store) {
   for (const s of store.getAllSignatories()) {
     rows.push(
       [
-        s.isLeader ? 'Pimpinan' : s.rowNumber,
-        s.category,
+        s.isRepresentative ? 'Perwakilan Unsur' : 'Lampiran I',
+        s.isRepresentative ? `U${s.repOrder}` : s.rowNumber,
         s.name,
         s.role,
         s.signed ? 'Sudah TTD' : 'Belum TTD',
         s.signed ? (s.signatureMethod === 'upload' ? 'Unggah Gambar' : 'TTD Langsung') : '-',
-        s.representedBy ? s.representedBy.name : '',
-        s.representedBy ? s.representedBy.role : '',
         s.signed ? formatWitaDateTime(s.signedAt) : '',
         s.verificationHash || '',
       ]
@@ -46,15 +40,12 @@ function generateRekapCsv(store) {
         .join(',')
     );
   }
-  // UTF-8 BOM for clean Excel opening in Indonesia
   return Buffer.from('\uFEFF' + rows.join('\r\n'), 'utf8');
 }
 
-/**
- * Packages individual signed documents (PDF or DOCX) + PNGs + CSV summary into a single ZIP.
- */
 async function generateIndividualBundleZip(store, format = 'pdf') {
   const zip = new JSZip();
+  const meta = store.getDocumentMeta();
   const signedList = store.getAllSignatories().filter((s) => s.signed);
 
   zip.file('Rekap_Penandatanganan_FSD_Berau_2026.csv', generateRekapCsv(store));
@@ -65,18 +56,18 @@ async function generateIndividualBundleZip(store, format = 'pdf') {
 
   for (const s of signedList) {
     const pngBuf = store.getSignatureBuffer(s.id);
-    const prefix = s.isLeader ? '00_Pimpinan' : String(s.rowNumber).padStart(2, '0');
+    const prefix = s.isRepresentative
+      ? `00_Unsur${s.repOrder}`
+      : String(s.rowNumber).padStart(2, '0');
     const safeName = `${prefix}_${sanitizeFilename(s.name)}`;
 
-    if (pngBuf) {
-      pngFolder.file(`${safeName}.png`, pngBuf);
-    }
+    if (pngBuf) pngFolder.file(`${safeName}.png`, pngBuf);
 
     if (format === 'docx') {
-      const docxBuf = await generateIndividualDocx(s, pngBuf);
+      const docxBuf = await generateIndividualDocx(s, pngBuf, meta);
       docFolder.file(`Bukti_TTD_${safeName}.docx`, docxBuf);
     } else {
-      const pdfBuf = await generateIndividualPdf(s, pngBuf);
+      const pdfBuf = await generateIndividualPdf(s, pngBuf, meta);
       docFolder.file(`Bukti_TTD_${safeName}.pdf`, pdfBuf);
     }
   }

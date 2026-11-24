@@ -14,7 +14,7 @@ const {
   BorderStyle,
   ShadingType,
 } = require('docx');
-const { DOCUMENT_META } = require('../seed');
+const { cloneDefaultDocumentMeta } = require('../seed');
 const { formatWitaDateTime } = require('../utils/formatters');
 const { getPngDimensions } = require('../utils/pngTools');
 
@@ -36,20 +36,20 @@ function metaRow(label, value) {
         width: { size: 32, type: WidthType.PERCENTAGE },
         shading: { type: ShadingType.CLEAR, fill: 'F8FAFC', color: 'auto' },
         borders: { top: border, bottom: border, left: border, right: border },
-        margins: { top: 90, bottom: 90, left: 140, right: 140 },
+        margins: { top: 85, bottom: 85, left: 130, right: 130 },
         children: [
           new Paragraph({
-            children: [new TextRun({ text: label, font: 'Arial', size: 20, bold: true, color: '1E293B' })],
+            children: [new TextRun({ text: label, font: 'Calibri', size: 21, bold: true, color: '111827' })],
           }),
         ],
       }),
       new TableCell({
         width: { size: 68, type: WidthType.PERCENTAGE },
         borders: { top: border, bottom: border, left: border, right: border },
-        margins: { top: 90, bottom: 90, left: 140, right: 140 },
+        margins: { top: 85, bottom: 85, left: 130, right: 130 },
         children: [
           new Paragraph({
-            children: [new TextRun({ text: value || '-', font: 'Arial', size: 20, color: '0F172A' })],
+            children: [new TextRun({ text: value || '-', font: 'Calibri', size: 21, color: '111827' })],
           }),
         ],
       }),
@@ -57,171 +57,94 @@ function metaRow(label, value) {
   });
 }
 
-/**
- * Generates an official 1-page individual signature confirmation .docx for a specific participant.
- */
-async function generateIndividualDocx(signatory, pngBuffer) {
+async function generateIndividualDocx(signatory, pngBuffer, documentMeta) {
+  const meta = documentMeta || cloneDefaultDocumentMeta();
+  const dateRow = (meta.eventDetails || []).find((r) => /tanggal/i.test(r.label));
+  const placeRow = (meta.eventDetails || []).find((r) => /tempat/i.test(r.label));
+
   const children = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 40 },
+      children: [new TextRun({ text: 'BUKTI PENANDATANGANAN BERITA ACARA', font: 'Calibri', size: 28, bold: true })],
+    }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 40 },
       children: [
         new TextRun({
-          text: 'PEMERINTAH KABUPATEN BERAU',
-          font: 'Arial',
-          size: 24,
-          bold: true,
-          color: '0F2342',
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 60 },
-      children: [
-        new TextRun({
-          text: 'BUKTI PENANDATANGANAN BERITA ACARA',
-          font: 'Arial',
-          size: 28,
-          bold: true,
-          color: '0F2342',
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 220 },
-      border: {
-        bottom: { style: BorderStyle.DOUBLE, size: 12, color: '0F2342', space: 8 },
-      },
-      children: [
-        new TextRun({
-          text: 'FORUM SATU DATA KABUPATEN BERAU TAHUN 2026',
-          font: 'Arial',
+          text: (meta.titleLines || []).slice(1).join(' ') || 'FORUM SATU DATA KABUPATEN BERAU TAHUN 2026',
+          font: 'Calibri',
           size: 22,
           bold: true,
-          color: '9E7628',
         }),
       ],
     }),
     new Paragraph({
-      spacing: { before: 120, after: 180 },
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: '111827', space: 8 } },
+      children: [new TextRun({ text: meta.documentNumber || '', font: 'Calibri', size: 20, color: '4B5563' })],
+    }),
+    new Paragraph({
+      spacing: { before: 100, after: 160 },
       alignment: AlignmentType.JUSTIFIED,
       children: [
         new TextRun({
-          text:
-            `Dokumen ini merupakan bukti sah persetujuan dan penandatanganan Berita Acara Kesepakatan Forum Satu Data ` +
-            `Kabupaten Berau Tahun 2026 yang dilaksanakan pada ${DOCUMENT_META.eventDateLabel} di ${DOCUMENT_META.venue}.`,
-          font: 'Arial',
-          size: 20,
-          color: '1E293B',
+          text: `Dokumen ini merupakan bukti penandatanganan Berita Acara Hasil Kesepakatan Forum Satu Data Kabupaten Berau Tahun 2026 (${dateRow ? dateRow.value : 'Rabu, 25 November 2026'}${placeRow ? ` — ${placeRow.value}` : ''}).`,
+          font: 'Calibri',
+          size: 21,
         }),
       ],
     }),
-  ];
-
-  const attendanceStatus = signatory.representedBy && signatory.representedBy.name
-    ? `Diwakili (a.n. ${signatory.representedBy.name}${signatory.representedBy.role ? ` — ${signatory.representedBy.role}` : ''})`
-    : 'Hadir Langsung';
-
-  const methodLabel = signatory.signed
-    ? signatory.signatureMethod === 'upload'
-      ? 'Unggah Gambar Tanda Tangan'
-      : 'Tanda Tangan Langsung (Digital Pad)'
-    : 'Belum Ditandatangani';
-
-  const tableRows = [
-    metaRow('Nomor Urut', signatory.isLeader ? 'Pimpinan Rapat (Bupati)' : `No. ${signatory.rowNumber}`),
-    metaRow('Nama Pejabat / Pihak', signatory.name),
-    metaRow('Jabatan / Instansi', signatory.role),
-    metaRow('Status Kehadiran', signatory.signed ? attendanceStatus : 'Belum Tercatat'),
-    metaRow('Waktu Penandatanganan', signatory.signed ? formatWitaDateTime(signatory.signedAt) : '-'),
-    metaRow('Metode Penandatanganan', methodLabel),
-    metaRow('Kode Verifikasi (SHA-256)', signatory.verificationHash || '-'),
-  ];
-
-  children.push(
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
-      rows: tableRows,
-    })
-  );
-
-  children.push(
-    new Paragraph({
-      spacing: { before: 220, after: 80 },
-      children: [
-        new TextRun({
-          text: 'Ringkasan Kesepakatan yang Disetujui:',
-          font: 'Arial',
-          size: 20,
-          bold: true,
-          color: '0F2342',
-        }),
+      rows: [
+        metaRow('Bagian', signatory.isRepresentative ? 'Perwakilan Unsur Peserta' : `Lampiran I — No. ${signatory.rowNumber}`),
+        metaRow('Nama', signatory.name),
+        metaRow('Lembaga / Instansi / Jabatan', signatory.role),
+        metaRow('Waktu Penandatanganan', signatory.signed ? formatWitaDateTime(signatory.signedAt) : '-'),
+        metaRow('Kode Verifikasi (SHA-256)', signatory.verificationHash || '-'),
       ],
-    })
-  );
+    }),
+    new Paragraph({
+      spacing: { before: 200, after: 80 },
+      children: [new TextRun({ text: 'Kesepakatan yang Disetujui:', font: 'Calibri', size: 21, bold: true })],
+    }),
+  ];
 
-  DOCUMENT_META.agreementPoints.forEach((pt, idx) => {
+  (meta.agreements || []).forEach((ag) => {
     children.push(
       new Paragraph({
         spacing: { after: 60 },
-        indent: { left: 320, hanging: 220 },
+        indent: { left: 260, hanging: 180 },
         alignment: AlignmentType.JUSTIFIED,
         children: [
-          new TextRun({ text: `${idx + 1}. `, font: 'Arial', size: 19, bold: true, color: '0F2342' }),
-          new TextRun({ text: pt, font: 'Arial', size: 19, color: '334155' }),
+          new TextRun({ text: `${ag.label}: `, font: 'Calibri', size: 20, bold: true }),
+          new TextRun({ text: ag.value, font: 'Calibri', size: 20 }),
         ],
       })
     );
   });
 
-  // Signature block on right side
   children.push(
     new Paragraph({
       alignment: AlignmentType.CENTER,
       indent: { left: 4600 },
-      spacing: { before: 260, after: 40 },
-      children: [
-        new TextRun({
-          text: 'Tanjung Redeb, 25 November 2026',
-          font: 'Arial',
-          size: 20,
-          color: '1E293B',
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      indent: { left: 4600 },
-      spacing: { after: 80 },
-      children: [
-        new TextRun({
-          text: signatory.isLeader ? 'Pimpinan Rapat Forum Data,' : 'Pihak yang Menyepakati,',
-          font: 'Arial',
-          size: 20,
-          bold: true,
-          color: '0F2342',
-        }),
-      ],
+      spacing: { before: 280, after: 80 },
+      children: [new TextRun({ text: 'Pihak yang Menyepakati,', font: 'Calibri', size: 21, bold: true })],
     })
   );
 
   if (signatory.signed && pngBuffer) {
     const dims = getPngDimensions(pngBuffer);
-    const { width, height } = fitPx(dims.width, dims.height, 210, 82);
+    const { width, height } = fitPx(dims.width, dims.height, 200, 78);
     children.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
         indent: { left: 4600 },
         spacing: { before: 40, after: 40 },
-        children: [
-          new ImageRun({
-            type: 'png',
-            data: pngBuffer,
-            transformation: { width, height },
-          }),
-        ],
+        children: [new ImageRun({ type: 'png', data: pngBuffer, transformation: { width, height } })],
       })
     );
   } else {
@@ -229,16 +152,8 @@ async function generateIndividualDocx(signatory, pngBuffer) {
       new Paragraph({
         alignment: AlignmentType.CENTER,
         indent: { left: 4600 },
-        spacing: { before: 320, after: 320 },
-        children: [
-          new TextRun({
-            text: '( Belum ditandatangani )',
-            font: 'Arial',
-            size: 18,
-            italics: true,
-            color: '94A3B8',
-          }),
-        ],
+        spacing: { before: 300, after: 300 },
+        children: [new TextRun({ text: '( Belum ditandatangani )', font: 'Calibri', size: 19, italics: true, color: '6B7280' })],
       })
     );
   }
@@ -248,65 +163,22 @@ async function generateIndividualDocx(signatory, pngBuffer) {
       alignment: AlignmentType.CENTER,
       indent: { left: 4600 },
       spacing: { after: 20 },
-      children: [
-        new TextRun({
-          text: signatory.name,
-          font: 'Arial',
-          size: 20,
-          bold: true,
-          underline: {},
-          color: '0F172A',
-        }),
-      ],
+      children: [new TextRun({ text: signatory.name, font: 'Calibri', size: 21, bold: true, underline: {} })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       indent: { left: 4600 },
-      spacing: { after: 40 },
-      children: [
-        new TextRun({
-          text: signatory.role,
-          font: 'Arial',
-          size: 18,
-          color: '475569',
-        }),
-      ],
+      children: [new TextRun({ text: signatory.role, font: 'Calibri', size: 19, color: '4B5563' })],
     })
   );
-
-  if (signatory.representedBy && signatory.representedBy.name) {
-    children.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        indent: { left: 4600 },
-        children: [
-          new TextRun({
-            text: `Ditandatangani a.n. ${signatory.representedBy.name}${signatory.representedBy.role ? ` (${signatory.representedBy.role})` : ''}`,
-            font: 'Arial',
-            size: 17,
-            italics: true,
-            color: '475569',
-          }),
-        ],
-      })
-    );
-  }
 
   const doc = new Document({
     sections: [
       {
         properties: {
           page: {
-            size: {
-              width: 11906, // A4 width in twips (210mm)
-              height: 16838, // A4 height in twips (297mm)
-            },
-            margin: {
-              top: 1134,
-              right: 1134,
-              bottom: 1134,
-              left: 1134,
-            },
+            size: { width: 11906, height: 16838 },
+            margin: { top: 1134, right: 1134, bottom: 1134, left: 1134 },
           },
         },
         children,

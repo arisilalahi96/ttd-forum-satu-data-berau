@@ -1,35 +1,35 @@
 'use strict';
 
 const PDFDocument = require('pdfkit');
-const { DOCUMENT_META } = require('../seed');
 const { getPngDimensions } = require('../utils/pngTools');
 const { formatWitaDateTime } = require('../utils/formatters');
 
-// Indonesian Official F4 / Folio dimensions in points (215mm x 330mm)
-const F4_WIDTH = 609.45;
-const F4_HEIGHT = 935.43;
-const MARGIN = 68; // ~2.4 cm
+// A4 dimensions matching BERITA ACARA HASIL KESEPAKATAN_Baru.docx (210mm x 297mm)
+const A4_WIDTH = 595.28;
+const A4_HEIGHT = 841.89;
+const MARGIN = 62;
 
 function fitBox(imgW, imgH, maxW, maxH) {
-  const sw = Math.max(1, imgW || 360);
-  const sh = Math.max(1, imgH || 140);
+  const sw = Math.max(1, imgW || 320);
+  const sh = Math.max(1, imgH || 120);
   const scale = Math.min(maxW / sw, maxH / sh);
   return { w: sw * scale, h: sh * scale };
 }
 
-/**
- * Generates a print-ready F4/Folio PDF of the complete Berita Acara with all live signatures.
- */
 function generateBeritaAcaraPdf(store) {
   return new Promise((resolve, reject) => {
+    const meta = store.getDocumentMeta();
+    const all = store.getAllSignatories();
+    const reps = all.filter((s) => s.isRepresentative).sort((a, b) => (a.repOrder || 0) - (b.repOrder || 0));
+    const lampiran = all.filter((s) => !s.isRepresentative).sort((a, b) => a.rowNumber - b.rowNumber);
+
     const doc = new PDFDocument({
-      size: [F4_WIDTH, F4_HEIGHT],
+      size: 'A4',
       margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
       bufferPages: true,
       info: {
-        Title: 'Berita Acara Kesepakatan Forum Satu Data Kabupaten Berau Tahun 2026',
+        Title: (meta.titleLines || []).join(' '),
         Author: 'Forum Satu Data Kabupaten Berau',
-        Subject: 'Berita Acara Kesepakatan Renaksi SDI 2026',
       },
     });
 
@@ -38,217 +38,244 @@ function generateBeritaAcaraPdf(store) {
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    const contentWidth = F4_WIDTH - MARGIN * 2;
-    const allSignatories = store.getAllSignatories();
-    const leader = allSignatories.find((s) => s.isLeader);
-    const tableSignatories = allSignatories
-      .filter((s) => !s.isLeader)
-      .sort((a, b) => a.rowNumber - b.rowNumber);
+    const cw = A4_WIDTH - MARGIN * 2;
+    const bottomLimit = A4_HEIGHT - MARGIN - 16;
 
-    // ===== PAGE 1: OFFICIAL BERITA ACARA TEXT + BUPATI SIGNATURE =====
-    doc.font('Helvetica-Bold').fontSize(13.5).fillColor('#000000');
-    DOCUMENT_META.titleLines.forEach((line) => {
-      doc.text(line, { align: 'center', lineGap: 2 });
-    });
-
-    doc.moveDown(1.4);
-    doc.font('Helvetica').fontSize(11).fillColor('#000000');
-
-    DOCUMENT_META.paragraphsBeforePoints.forEach((para) => {
-      doc.text(para, { align: 'justify', lineGap: 3.5 });
-      doc.moveDown(0.7);
-    });
-
-    // Numbered agreement points 1..4
-    DOCUMENT_META.agreementPoints.forEach((point, idx) => {
-      const startY = doc.y;
-      doc.font('Helvetica').fontSize(11).text(`${idx + 1}.`, MARGIN + 10, startY, { width: 18 });
-      doc.text(point, MARGIN + 28, startY, {
-        width: contentWidth - 28,
-        align: 'justify',
-        lineGap: 3.2,
-      });
-      doc.moveDown(0.45);
-    });
-
-    doc.x = MARGIN;
-    doc.moveDown(0.4);
-    doc.text(DOCUMENT_META.closingParagraph, { align: 'justify', lineGap: 3.5 });
-    doc.moveDown(1.8);
-
-    // Bupati signature block aligned to right half (matching template left=4962 twips)
-    const sigColX = MARGIN + contentWidth * 0.48;
-    const sigColW = contentWidth * 0.52;
-
-    doc.font('Helvetica').fontSize(11);
-    DOCUMENT_META.leaderBlock.lines.forEach((line) => {
-      doc.text(line, sigColX, doc.y, { width: sigColW, align: 'center', lineGap: 2 });
-    });
-
-    const leaderBuf = leader && leader.signed ? store.getSignatureBuffer(leader.id) : null;
-    if (leaderBuf) {
-      const dims = getPngDimensions(leaderBuf);
-      const { w, h } = fitBox(dims.width, dims.height, 155, 64);
-      const imgX = sigColX + (sigColW - w) / 2;
-      const imgY = doc.y + 8;
-      doc.image(leaderBuf, imgX, imgY, { width: w, height: h });
-      doc.y = imgY + h + 8;
-      if (leader.representedBy && leader.representedBy.name) {
-        doc
-          .font('Helvetica-Oblique')
-          .fontSize(8.5)
-          .fillColor('#334155')
-          .text(
-            `a.n. ${leader.representedBy.name}${leader.representedBy.role ? ` (${leader.representedBy.role})` : ''}`,
-            sigColX,
-            doc.y,
-            { width: sigColW, align: 'center' }
-          );
-        doc.moveDown(0.2);
+    function ensureSpace(needed) {
+      if (doc.y + needed > bottomLimit) {
+        doc.addPage({ size: 'A4', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN } });
       }
-    } else {
-      doc.moveDown(4.2);
     }
 
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(11)
-      .fillColor('#000000')
-      .text(leader ? leader.name : DOCUMENT_META.leaderBlock.name, sigColX, doc.y, {
-        width: sigColW,
+    // ===== TITLE & NUMBER =====
+    doc.font('Helvetica-Bold').fontSize(12.5).fillColor('#000000');
+    (meta.titleLines || []).forEach((line) => {
+      doc.text(line, MARGIN, doc.y, { width: cw, align: 'center', lineGap: 2 });
+    });
+    if (meta.documentNumber) {
+      doc.moveDown(0.2);
+      doc.font('Helvetica').fontSize(10.5).text(meta.documentNumber, MARGIN, doc.y, {
+        width: cw,
         align: 'center',
-        underline: true,
       });
+    }
 
-    // ===== PAGE 2+: PIHAK-PIHAK YANG MENYEPAKATI TABLE =====
-    doc.addPage({
-      size: [F4_WIDTH, F4_HEIGHT],
-      margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
+    doc.moveDown(1);
+    doc.font('Helvetica').fontSize(10.2).fillColor('#000000');
+
+    // Opening
+    if (meta.openingParagraph) {
+      doc.text(meta.openingParagraph, MARGIN, doc.y, { width: cw, align: 'justify', lineGap: 2.8 });
+      doc.moveDown(0.55);
+    }
+
+    // Considerations
+    if (meta.considerationsHeading) {
+      doc.text(meta.considerationsHeading, MARGIN, doc.y, { width: cw, align: 'justify', lineGap: 2.5 });
+      doc.moveDown(0.3);
+    }
+    (meta.considerations || []).forEach((pt, idx) => {
+      const h = doc.heightOfString(pt, { width: cw - 24, lineGap: 2.3 });
+      ensureSpace(h + 8);
+      const y = doc.y;
+      doc.text(`${idx + 1}.`, MARGIN + 6, y, { width: 18 });
+      doc.text(pt, MARGIN + 24, y, { width: cw - 24, align: 'justify', lineGap: 2.3 });
+      doc.moveDown(0.32);
     });
 
-    doc.font('Helvetica-Bold').fontSize(10.5).fillColor('#000000');
-    doc.text('PIHAK-PIHAK YANG MENYEPAKATI :', MARGIN, MARGIN);
+    // Event details
+    if (meta.eventLead) {
+      ensureSpace(24);
+      doc.moveDown(0.25);
+      doc.text(meta.eventLead, MARGIN, doc.y, { width: cw });
+      doc.moveDown(0.25);
+    }
+    (meta.eventDetails || []).forEach((row) => {
+      const labelW = 105;
+      const valW = cw - labelW - 14;
+      const h = Math.max(14, doc.heightOfString(row.value || '', { width: valW, lineGap: 2 }));
+      ensureSpace(h + 6);
+      const y = doc.y;
+      doc.text(row.label || '', MARGIN + 8, y, { width: labelW - 8 });
+      doc.text(':', MARGIN + labelW, y, { width: 12, align: 'center' });
+      doc.text(row.value || '', MARGIN + labelW + 14, y, { width: valW, align: 'justify', lineGap: 2 });
+      doc.y = y + h + 4;
+    });
+
+    // MENYEPAKATI
+    if (meta.agreementLead) {
+      ensureSpace(40);
+      doc.moveDown(0.5);
+      doc.text(meta.agreementLead, MARGIN, doc.y, { width: cw });
+    }
+    if (meta.agreementHeading) {
+      doc.moveDown(0.35);
+      doc.font('Helvetica-Bold').fontSize(10.5).text(meta.agreementHeading, MARGIN, doc.y, {
+        width: cw,
+        align: 'center',
+      });
+      doc.moveDown(0.4);
+    }
+    doc.font('Helvetica').fontSize(10.2);
+    (meta.agreements || []).forEach((row) => {
+      const labelW = 68;
+      const valW = cw - labelW - 14;
+      const h = Math.max(14, doc.heightOfString(row.value || '', { width: valW, lineGap: 2.2 }));
+      ensureSpace(h + 8);
+      const y = doc.y;
+      doc.text(row.label || '', MARGIN + 6, y, { width: labelW - 6 });
+      doc.text(':', MARGIN + labelW, y, { width: 12, align: 'center' });
+      doc.text(row.value || '', MARGIN + labelW + 14, y, { width: valW, align: 'justify', lineGap: 2.2 });
+      doc.y = y + h + 5;
+    });
+
+    // Closing
+    if (meta.closingParagraph) {
+      ensureSpace(40);
+      doc.moveDown(0.5);
+      doc.text(meta.closingParagraph, MARGIN, doc.y, { width: cw, align: 'justify', lineGap: 2.6 });
+    }
+
+    // 4 Representatives 2x2 Signature Grid
+    ensureSpace(175);
+    doc.moveDown(0.9);
+    if (meta.representativesHeading) {
+      doc.font('Helvetica-Bold').fontSize(10.2).text(meta.representativesHeading, MARGIN, doc.y, {
+        width: cw,
+        align: 'center',
+      });
+      doc.moveDown(0.7);
+    }
+
+    const halfW = cw / 2;
+    for (let i = 0; i < reps.length; i += 2) {
+      ensureSpace(130);
+      const pair = [reps[i], reps[i + 1]];
+      const startY = doc.y;
+
+      // Measure role heights
+      doc.font('Helvetica').fontSize(9.5);
+      let maxRoleH = 14;
+      pair.forEach((rep) => {
+        if (!rep) return;
+        const lines = Array.isArray(rep.roleLines) && rep.roleLines.length ? rep.roleLines : [rep.role];
+        const h = doc.heightOfString(lines.join('\n'), { width: halfW - 18, align: 'center', lineGap: 1.5 });
+        if (h > maxRoleH) maxRoleH = h;
+      });
+
+      const sigTop = startY + maxRoleH + 6;
+      const sigAreaH = 54;
+      const nameY = sigTop + sigAreaH + 6;
+
+      pair.forEach((rep, idx) => {
+        if (!rep) return;
+        const colX = MARGIN + idx * halfW;
+        const lines = Array.isArray(rep.roleLines) && rep.roleLines.length ? rep.roleLines : [rep.role];
+        doc.font('Helvetica').fontSize(9.5).fillColor('#000000').text(lines.join('\n'), colX + 9, startY, {
+          width: halfW - 18,
+          align: 'center',
+          lineGap: 1.5,
+        });
+
+        const buf = rep.signed ? store.getSignatureBuffer(rep.id) : null;
+        if (buf) {
+          const dims = getPngDimensions(buf);
+          const { w, h } = fitBox(dims.width, dims.height, 138, sigAreaH - 6);
+          doc.image(buf, colX + (halfW - w) / 2, sigTop + (sigAreaH - h) / 2, { width: w, height: h });
+        }
+
+        doc.font('Helvetica-Bold').fontSize(9.8).fillColor('#000000').text(rep.name, colX + 6, nameY, {
+          width: halfW - 12,
+          align: 'center',
+          underline: true,
+        });
+      });
+
+      doc.y = nameY + 26;
+    }
+
+    // ===== LAMPIRAN I TABLE (NEW PAGE) =====
+    doc.addPage({ size: 'A4', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN } });
+
+    doc.font('Helvetica-Bold').fontSize(11).fillColor('#000000').text(meta.lampiranHeading || 'LAMPIRAN I', MARGIN, MARGIN);
+    if (meta.lampiranSubheading) {
+      doc.moveDown(0.25);
+      doc.font('Helvetica').fontSize(10).text(meta.lampiranSubheading, MARGIN, doc.y, { width: cw });
+    }
     doc.moveDown(0.6);
 
-    const colWidths = [32, 148, 162, contentWidth - 32 - 148 - 162]; // No, Nama, Jabatan, Tanda tangan
+    const colWidths = [30, 146, 175, cw - 30 - 146 - 175];
     const colX = [
       MARGIN,
       MARGIN + colWidths[0],
       MARGIN + colWidths[0] + colWidths[1],
       MARGIN + colWidths[0] + colWidths[1] + colWidths[2],
     ];
-    const headerHeight = 26;
-    const bottomLimit = F4_HEIGHT - MARGIN - 20;
+    const headerH = 24;
 
     function drawTableHeader(y) {
       doc.save();
-      doc.rect(MARGIN, y, contentWidth, headerHeight).fillAndStroke('#F1F5F9', '#1E293B');
+      doc.rect(MARGIN, y, cw, headerH).fillAndStroke('#F3F4F6', '#111827');
       for (let i = 1; i < colX.length; i++) {
-        doc.moveTo(colX[i], y).lineTo(colX[i], y + headerHeight).stroke('#1E293B');
+        doc.moveTo(colX[i], y).lineTo(colX[i], y + headerH).stroke('#111827');
       }
-      doc.fillColor('#000000').font('Helvetica-Bold').fontSize(9.5);
-      const labels = ['No', 'Nama', 'Jabatan/Instansi', 'Tanda tangan'];
-      labels.forEach((lbl, idx) => {
-        doc.text(lbl, colX[idx] + 5, y + 8, {
-          width: colWidths[idx] - 10,
+      doc.fillColor('#000000').font('Helvetica-Bold').fontSize(8.8);
+      ['NO', 'NAMA', 'LEMBAGA/INSTANSI/JABATAN', 'TANDA TANGAN'].forEach((lbl, idx) => {
+        doc.text(lbl, colX[idx] + 4, y + 7, {
+          width: colWidths[idx] - 8,
           align: idx === 0 || idx === 3 ? 'center' : 'left',
         });
       });
       doc.restore();
-      return y + headerHeight;
+      return y + headerH;
     }
 
     let cursorY = drawTableHeader(doc.y);
 
-    for (const s of tableSignatories) {
-      doc.font('Helvetica').fontSize(9.2);
+    for (const s of lampiran) {
+      doc.font('Helvetica').fontSize(8.8);
       const nameH = doc.heightOfString(s.name, { width: colWidths[1] - 10 });
       const roleH = doc.heightOfString(s.role, { width: colWidths[2] - 10 });
-      const repExtra = s.representedBy && s.representedBy.name ? 13 : 0;
-      const sigMinH = s.signed ? 44 + repExtra : 34;
-      const rowH = Math.max(36, nameH + 14, roleH + 14, sigMinH);
+      const rowH = Math.max(s.signed ? 42 : 32, nameH + 12, roleH + 12);
 
       if (cursorY + rowH > bottomLimit) {
-        doc.addPage({
-          size: [F4_WIDTH, F4_HEIGHT],
-          margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
-        });
+        doc.addPage({ size: 'A4', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN } });
         cursorY = drawTableHeader(MARGIN);
       }
 
-      // Draw row borders
       doc.save();
-      doc.lineWidth(0.6).strokeColor('#334155');
-      doc.rect(MARGIN, cursorY, contentWidth, rowH).stroke();
+      doc.lineWidth(0.55).strokeColor('#1F2937');
+      doc.rect(MARGIN, cursorY, cw, rowH).stroke();
       for (let i = 1; i < colX.length; i++) {
         doc.moveTo(colX[i], cursorY).lineTo(colX[i], cursorY + rowH).stroke();
       }
       doc.restore();
 
-      // Col 1: No
-      doc.font('Helvetica').fontSize(9.2).fillColor('#000000');
-      doc.text(String(s.rowNumber), colX[0] + 4, cursorY + (rowH - 10) / 2, {
-        width: colWidths[0] - 8,
+      doc.font('Helvetica').fontSize(8.8).fillColor('#000000');
+      doc.text(String(s.rowNumber), colX[0] + 3, cursorY + (rowH - 9) / 2, {
+        width: colWidths[0] - 6,
         align: 'center',
       });
+      doc.text(s.name, colX[1] + 5, cursorY + (rowH - nameH) / 2, { width: colWidths[1] - 10 });
+      doc.text(s.role, colX[2] + 5, cursorY + (rowH - roleH) / 2, { width: colWidths[2] - 10 });
 
-      // Col 2: Nama
-      doc.text(s.name, colX[1] + 6, cursorY + (rowH - nameH) / 2, {
-        width: colWidths[1] - 12,
-      });
-
-      // Col 3: Jabatan/Instansi
-      doc.text(s.role, colX[2] + 6, cursorY + (rowH - roleH) / 2, {
-        width: colWidths[2] - 12,
-      });
-
-      // Col 4: Tanda tangan
       const sigBuf = s.signed ? store.getSignatureBuffer(s.id) : null;
       if (sigBuf) {
         const dims = getPngDimensions(sigBuf);
-        const maxSigW = colWidths[3] - 16;
-        const maxSigH = rowH - (repExtra ? 20 : 10);
-        const { w, h } = fitBox(dims.width, dims.height, maxSigW, maxSigH);
-        const imgX = colX[3] + (colWidths[3] - w) / 2;
-        const imgY = cursorY + (rowH - repExtra - h) / 2;
+        const { w, h } = fitBox(dims.width, dims.height, colWidths[3] - 14, rowH - 8);
         try {
-          doc.image(sigBuf, imgX, imgY, { width: w, height: h });
+          doc.image(sigBuf, colX[3] + (colWidths[3] - w) / 2, cursorY + (rowH - h) / 2, { width: w, height: h });
         } catch {
-          doc.text('(TTD tercatat)', colX[3] + 6, cursorY + rowH / 2 - 5, {
-            width: colWidths[3] - 12,
-            align: 'center',
-          });
+          // ignore
         }
-
-        if (s.representedBy && s.representedBy.name) {
-          doc
-            .font('Helvetica-Oblique')
-            .fontSize(7.2)
-            .fillColor('#334155')
-            .text(`a.n. ${s.representedBy.name}`, colX[3] + 4, cursorY + rowH - 12, {
-              width: colWidths[3] - 8,
-              align: 'center',
-              ellipsis: true,
-              lineBreak: false,
-            });
-        }
-      } else {
-        doc
-          .font('Helvetica')
-          .fontSize(9)
-          .fillColor('#64748B')
-          .text('……………………………', colX[3] + 6, cursorY + (rowH - 10) / 2, {
-            width: colWidths[3] - 12,
-            align: 'center',
-          });
       }
 
       cursorY += rowH;
     }
 
-    // Subtle page footers across all pages (temporarily zero bottom margin so PDFKit never auto-adds blank pages)
+    // Footers (with zeroed bottom margin to prevent extra blank pages)
     const range = doc.bufferedPageRange();
-    const generatedLabel = formatWitaDateTime(new Date().toISOString());
+    const printedAt = formatWitaDateTime(new Date().toISOString());
     for (let i = 0; i < range.count; i++) {
       doc.switchToPage(i);
       const prevBottom = doc.page.margins.bottom;
@@ -256,15 +283,14 @@ function generateBeritaAcaraPdf(store) {
       doc
         .font('Helvetica')
         .fontSize(7.5)
-        .fillColor('#64748B')
-        .text(
-          `Berita Acara Kesepakatan Forum Satu Data Kabupaten Berau 2026  •  Dicetak ${generatedLabel}`,
-          MARGIN,
-          F4_HEIGHT - 36,
-          { width: contentWidth - 70, align: 'left', lineBreak: false }
-        );
-      doc.text(`Hal. ${i + 1} / ${range.count}`, MARGIN + contentWidth - 70, F4_HEIGHT - 36, {
-        width: 70,
+        .fillColor('#6B7280')
+        .text(`Berita Acara Hasil Kesepakatan Forum Satu Data Kab. Berau 2026  •  ${printedAt}`, MARGIN, A4_HEIGHT - 34, {
+          width: cw - 65,
+          align: 'left',
+          lineBreak: false,
+        });
+      doc.text(`Hal. ${i + 1} / ${range.count}`, MARGIN + cw - 65, A4_HEIGHT - 34, {
+        width: 65,
         align: 'right',
         lineBreak: false,
       });

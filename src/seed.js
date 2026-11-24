@@ -1,143 +1,173 @@
 'use strict';
 
 const DOCUMENT_META = {
-  id: 'ba-fsd-berau-2026',
+  id: 'ba-fsd-berau-2026-v2',
   titleLines: [
-    'BERITA ACARA',
-    'KESEPAKATAN FORUM SATU DATA',
-    'KABUPATEN BERAU',
+    'BERITA ACARA HASIL KESEPAKATAN',
+    'FORUM SATU DATA KABUPATEN BERAU',
     'TAHUN 2026',
   ],
-  shortTitle: 'Forum Satu Data Kabupaten Berau 2026',
-  eventDateLabel: 'Rabu, 25 November 2026',
-  venue: 'Ruang Rapat RKPD Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau',
-  paragraphsBeforePoints: [
-    'Pada hari, Rabu tanggal Dua Puluh Lima bulan November tahun Dua Ribu Dua Puluh Enam, bertempat di Ruang Rapat RKPD Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau telah dilaksanakan Forum Satu Data Kabupaten Berau Tahun 2026.',
-    'Forum ini diselenggarakan dalam rangka pelaksanaan kebijakan Satu Data Indonesia sebagaimana diatur dalam Peraturan Presiden Nomor 39 Tahun 2019 tentang Satu Data Indonesia, serta untuk meningkatkan keterpaduan perencanaan, pengelolaan, dan pemanfaatan data pembangunan di Kabupaten Berau.',
-    'Berdasarkan hasil pembahasan dan kesepakatan bersama seluruh peserta forum yang terdiri dari unsur Pembina Data, Walidata, serta Organisasi Perangkat Daerah (OPD) selaku Produsen Data, maka disepakati hal-hal sebagai berikut:',
+  documentNumber: 'Nomor :             /       /Bapp-II/2026',
+  openingParagraph:
+    'Pada hari ini Rabu, tanggal Dua Puluh Lima, bulan November. Tahun Dua Ribu Dua Puluh Enam, di Ruang Rapat RKPD Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau dan secara online melalui Zoom Meeting, telah dilaksanakan Forum Satu Data Kabupaten Berau yang dihadiri oleh para pemangku kepentingan, sebagaimana tercantum pada daftar peserta pada Lampiran I Berita Acara ini:',
+  considerationsHeading: 'Setelah mendengar, memperhatikan, dan mempertimbangkan:',
+  considerations: [
+    'Arahan Bupati Berau yang diwakili oleh Kepala Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau, Ibu Ir. Endah Ernany Triariani, M.Si ;',
+    'Penyampaian materi Koordinator Satu Data Kabupaten Berau oleh Kepala Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau, Ibu Ir. Endah Ernany Triariani, M.Si dengan tema “…………………”;',
+    'Penyampaian materi Kepala Badan Pusat Statistik Kabupaten Berau oleh Bapak Yudi Wahyudin, S.ST., M.Si dengan tema “Sigap Berau”;',
+    'Penyampaian materi Kepala Dinas Komunikasi dan Informatika Kabupaten Berau oleh Bapak Saleh, SE dengan tema “……………….”;',
+    'Penyampaian materi Pembina Statistik Sektoral oleh Ibu Lita Januarti Hakim, S.ST., M.Si dengan tema “Penguatan Aliran Data Statistik Sektoral dari Produsen Data hingga Pemanfaatannya”;',
+    'Hasil pemilahan, verifikasi dan persetujuan data daerah tahun 2026 oleh perangkat daerah :',
   ],
-  agreementPoints: [
-    'Menyepakati Daftar Data Kabupaten Berau Tahun 2027, berdasarkan Hasil Pra-Forum dan Verifikasi Data.',
-    'Menyepakati Rencana Aksi Satu Data Kabupaten Berau Tahun 2027-2029 yang memuat kegiatan pengelolaan data per OPD, termasuk pemenuhan standar data, metadata, interoperabilitas data, dan pemanfaatan data.',
-    'Setiap OPD sebagai produsen data bertanggung jawab untuk memastikan ketersediaan dan keterisian dari daftar data yang telah disepakati sesuai dengan jadwal dan target yang ditetapkan.',
-    'Rencana Aksi Satu Data Kabupaten Berau Tahun 2027-2029 menjadi dasar dalam pelaksanaan pengelolaan data daerah serta bahan penetapan kebijakan lebih lanjut oleh Pemerintah Kabupaten Berau.',
+  eventLead: 'Maka pada:',
+  eventDetails: [
+    { label: 'Hari dan tanggal', value: 'Rabu, 25 November 2026' },
+    { label: 'Waktu', value: 'Pukul 08.00 – 12.00 WITA' },
+    {
+      label: 'Tempat',
+      value:
+        'Ruang Rapat RKPD Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau dan melalui Zoom Meeting',
+    },
+  ],
+  agreementLead: 'Seluruh peserta Forum Satu Data Tahun 2026',
+  agreementHeading: 'MENYEPAKATI',
+  agreements: [
+    {
+      label: 'Kesatu',
+      value: 'Penyepakatan daftar data tahun 2026 sebagaimana tercantum pada Lampiran II berita acara ini;',
+    },
+    {
+      label: 'Kedua',
+      value:
+        'Rencana Aksi Satu Data Kabupaten Berau Tahun 2027-2029 sebagaimana tercantum dalam Lampiran III berita acara ini;',
+    },
   ],
   closingParagraph:
-    'Demikian Berita Acara Kesepakatan Forum Satu Data Kabupaten Berau Tahun 2026 ini dibuat dan disepakati untuk dipergunakan sebagaimana mestinya.',
-  leaderBlock: {
-    lines: ['Mengetahui', 'Pimpinan Rapat Forum Data', 'Kabupaten Berau,', 'Bupati'],
-    name: 'HJ. SRI JUNIARSIH MAS, M.PD.',
-    role: 'Bupati Berau — Pimpinan Rapat Forum Data Kabupaten Berau',
-  },
+    'Demikian berita acara kesepakatan ini dibuat dan disahkan untuk digunakan sebagaimana mestinya.',
+  representativesHeading: 'Mewakili unsur peserta Forum Satu Data Tahun 2026',
+  lampiranHeading: 'LAMPIRAN I',
+  lampiranSubheading:
+    'Pihak dibawah ini telah hadir dan menyepakati Hasil Forum Satu Data Tahun 2026',
 };
 
-function classifyCategory(role, isLeader = false, isCustom = false) {
-  if (isLeader) return 'Pimpinan Rapat';
-  if (isCustom) return 'Peserta Tambahan';
-  const r = (role || '').toLowerCase();
-  if (r.startsWith('sekretaris daerah') || r.startsWith('asisten ')) return 'Sekda & Asisten';
-  if (r.startsWith('staf ahli')) return 'Staf Ahli';
-  if (r.startsWith('kepala bagian')) return 'Kepala Bagian';
-  if (r.startsWith('kepala badan')) return 'Kepala Badan';
-  if (r.startsWith('kepala dinas')) return 'Kepala Dinas';
-  if (r.startsWith('sekretaris ')) return 'Sekretaris';
-  if (r.startsWith('camat ')) return 'Camat';
-  return 'Lainnya';
-}
+const RAW_REPRESENTATIVES = [
+  {
+    id: 'rep-1',
+    slotOrder: 1,
+    name: 'Muhammad Said, SH., MH',
+    role: 'Sekretaris Daerah',
+    roleLines: ['Sekretaris Daerah'],
+  },
+  {
+    id: 'rep-2',
+    slotOrder: 2,
+    name: 'Ir. Endah Ernany Triariani, M. Si',
+    role: 'Kepala BAPPERIDA Kabupaten Berau — Selaku Koordinator Forum Satu Data',
+    roleLines: ['Kepala BAPPERIDA Kabupaten Berau', 'Selaku', 'Koordinator Forum Satu Data'],
+  },
+  {
+    id: 'rep-3',
+    slotOrder: 3,
+    name: 'Yudi Wahyudin, S.ST., M. Si',
+    role: 'Kepala BPS Kabupaten Berau — Selaku Pembina Data Statistik',
+    roleLines: ['Kepala BPS Kabupaten Berau', 'Selaku', 'Pembina Data Statistik'],
+  },
+  {
+    id: 'rep-4',
+    slotOrder: 4,
+    name: 'H. Didi Rahmadi, S.Sos., MM',
+    role: 'Kepala DISKOMINFO Kabupaten Berau — Selaku Walidata',
+    roleLines: ['Kepala DISKOMINFO Kabupaten Berau', 'Selaku', 'Walidata'],
+  },
+];
 
-const RAW_TABLE_SIGNATORIES = [
-  [1, 'Muhammad Said', 'Sekretaris Daerah'],
-  [2, 'Hendratno', 'Asisten Pemerintahan dan Kesra'],
-  [3, 'Mustakimsuharjana', 'Asisten Pembangunan dan Perekonomian'],
-  [4, 'Maulidiyah', 'Asisten Administrasi Umum'],
-  [5, 'Junaidi', 'Staf Ahli Bidang Keuangan dan Sumber Daya Manusia'],
-  [6, 'Andi Marewangeng', 'Staf Ahli Bidang Pembangunan dan Ekonomi'],
-  [7, 'Warji', 'Staf Ahli Bidang Pemerintahan, Politik Hukum dan Kesejahteraan Rakyat'],
-  [8, 'Sofyan Widodo', 'Kepala Bagian Hukum dan Kerjasama Daerah'],
-  [9, 'Endang Iriani', 'Kepala Bagian Perencanaan dan Keuangan'],
-  [10, 'Ismiyanto', 'Kepala Bagian Admnistrasi dan Pembangunan'],
-  [11, 'Kesuma Sirajuddin', 'Kepala Bagian Umum'],
-  [12, 'Slamet Riyadi', 'Kepala Bagian Ekonomi'],
-  [13, 'Toto Marjito', 'Kepala Bagian Kesejahteraan Rakyat'],
-  [14, 'Agus Sutanto', 'Kepala Bagian Protokol dan Komunikasi Pimpinan'],
-  [15, 'Jimmy Arwi SIregar', 'Kepala Bagian Layanan Pengadaan Barang dan Jasa'],
-  [16, 'M Ali Hanapiah', 'Kepala Bagian Organisasi'],
-  [17, 'Jaka Siswanta', 'Kepala Badan Kepegawaian Pendidikan dan SDM'],
-  [18, 'Masyhadi Muhdi', 'Kepala Badan Penanggulangan Bencana Daerah'],
-  [19, 'Endah Ernany Triariani', 'Kepala Badan Penelitian dan Pengembangan'],
-  [20, 'Sapransyah', 'Kepala Badan Pengelolaan Keuangan dan Aset Daerah'],
-  [21, 'Salim', 'Kepala Badan Kesatuan Bangsa dan Politik'],
-  [22, 'Djupiansyah Ganie', 'Kepala Badan Pendapatan Daerah'],
-  [23, 'Lita Handini', 'Kepala Dinas Tanaman Pangan, Hortikultura dan Peternakan'],
-  [24, 'Mulyadi', 'Kepala Dinas Perumahan dan Kawasan Permukiman'],
-  [25, 'Rabiatul Islamiah', 'Kepala Dinas Perpustakaan dan Kearsipan'],
-  [26, 'Nanang Bakran', 'Kepala Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu'],
-  [27, 'Zulkifli Ashari', 'Kepala Dinas Lingkungan Hidup dan Kebersihan'],
-  [28, 'Anang Saprani', 'Kepala Dinas Tenaga Kerja dan Transmigrasi'],
-  [29, 'Rusnan Hefni', 'Kepala Dinas Perhubungan'],
-  [30, 'Didi Rahmadi', 'Kepala Dinas Komunikasi dan Informatika'],
-  [31, 'Lamlay Sarie', 'Kepala Dinas Kesehatan'],
-  [32, 'David Pamuji', 'Kepala Dinas Kependudukan dan Pencatatan Sipil'],
-  [33, 'Eva Yunita', 'Kepala Dinas Koperasi Perindustrian dan Perdagangan'],
-  [34, 'Abdul Majid', 'Kepala Dinas Perikanan'],
-  [35, 'Tenteram Rahayu', 'Kepala Dinas Pemberdayaan Masyarakat dan Kampung'],
-  [36, 'Fendra Firnawan', 'Kepala Dinas Pekerjaan Umum dan Tata Ruang'],
-  [37, 'Yudha Budi Santosa', 'Kepala Dinas Kebudayaan dan Pariwisata'],
-  [38, 'Mardiatul Idalisah', 'Kepala Dinas Pendidikan'],
-  [39, 'Rakhmadi Pasarakan', 'Kepala Dinas Pemadam Kebakaran dan Penyelamatan (Damkar)'],
-  [40, 'Yusup Gunawan', 'Sekretaris Inspektorat'],
-  [41, 'Purwo Sutopo', 'Sekretaris BKPSDM'],
-  [42, 'Samsuddin Amba Kadang', 'Sekretaris Badan Pendapatan Daerah'],
-  [43, 'Aidil Fitri', 'Sekretaris Badan Kesatuan Bangsa Dan Politik'],
-  [44, 'Renny Irawati Sanwani', 'Sekretaris Dinas Pendidikan'],
-  [45, 'Hery Irwan', 'Sekretaris Dinas Pemadam Kebakaran Dan Penyelamatan'],
-  [46, 'Dewi Rosita', 'Sekretaris Dinas Pangan'],
-  [47, 'Hesbend Nafsiah Nuransyah', 'Sekretaris Dinas Kepemudaan Dan Olahraga'],
-  [48, 'Tri Anggoro Rahardjo', 'Sekretaris Dinas Pertanahan'],
-  [49, 'Hendra Syaifuddin', 'Sekretaris Dinas Perhubungan'],
-  [50, 'Samsiah', 'Sekretaris Dinas Pariwisata'],
-  [51, 'Wahyudi', 'Camat Tabalar'],
-  [52, 'Ahmad Juhri', 'Camat Tanjung Redeb'],
-  [53, 'Noor Alam', 'Camat Sambaliung'],
-  [54, 'Toris', 'Camat Segah'],
+const RAW_LAMPIRAN_SIGNATORIES = [
+  [1, 'Ir. Endah Ernany Triariani, M.Si', 'Kepala Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah'],
+  [2, 'Yudi Wahyudin, S.ST., M. Si', 'Kepala BPS Kabupaten Berau'],
+  [3, 'H. Didi Rahmadi, S.Sos., MM', 'Kepala Dinas Komunikasi Dan Informatika'],
+  [4, 'H. Jaka Siswanta, SH, M.Si.', 'Kepala Badan Kepegawaian dan Pengembangan Sumber Daya Manusia'],
+  [5, 'Drs. Salim', 'Kepala Badan Kesatuan Bangsa Dan Politik'],
+  [6, 'Dr. H. Djupiansyah Ganie, SE, M.Si', 'Kepala Badan Pendapatan Daerah'],
+  [7, 'H. Masyadi Muhdi, S.Hut., M.Si', 'Kepala Badan Penanggulangan Bencana Daerah'],
+  [8, 'Sapransyah, S.STP', 'Kepala Badan Pengelolaan Keuangan Dan Aset Daerah'],
+  [9, 'Ir. H. Riza Fakhmi', 'Inspektur Inspektorat'],
+  [10, 'Risma Rosehan, SE', 'Kepala Satuan Polisi Pamong Praja'],
+  [11, 'H. Zulkifli Azhari, SH., M.A.P', 'Kepala Dinas Lingkungan Hidup Dan Kebersihan'],
+  [12, 'Ir. Hj. Tenteram Rahayu', 'Kepala Dinas Pemberdayaan Masyarakat Dan Kampung'],
+  [13, 'Arif Rudi Hermawan, S.Si., M.Si., Apt', 'Kepala Dinas Pangan'],
+  [14, 'H. Nanang Bakran, ST.MT', 'Kepala Dinas Penanaman Modal Dan Pelayanan Terpadu Satu Pintu'],
+  [15, 'Aidil Fitri, S.ST., M.P', 'Kepala Dinas Pengendalian Pendudukan Dan KB, Pemberdayaan Perempuan Dan Perlindungan Anak'],
+  [16, 'Lamlay Sarie, S.Si., Apt., M.Sc.', 'Kepala Dinas Kesehatan'],
+  [17, 'Drs. Yudha Budisantosa., M.Si', 'Kepala Dinas Kebudayaan Dan Pariwisata'],
+  [18, 'Fendra Firnawan, ST., M.Si', 'Kepala Dinas Pekerjaan Umum Dan Penataan Ruang'],
+  [19, 'Hj. Mardiatul Idalisah, S.Pd., M.M', 'Kepala Dinas Pendidikan'],
+  [20, 'Rusnan Hefni, M.T', 'Kepala Dinas Perhubungan'],
+  [21, 'Abdul Madjid, S.Pi.,M.Si', 'Kepala Dinas Perikanan'],
+  [22, 'Hj. Eva Yunita, SE., MM', 'Kepala Dinas Koperasi, Perindustrian Dan Perdagangan'],
+  [23, 'Ir. Lita Handini', 'Kepala Dinas Tanaman Pangan, Hortikultura dan Peternakan'],
+  [24, 'H. Zulkifli Azhari, SH., M.A.P', 'Kepala Dinas Sosial'],
+  [25, 'H. Anang Saprani, SH., M.Si', 'Kepala Dinas Tenaga Kerja Dan Transmigrasi'],
+  [26, 'David Pamuji, S.STP., M.Si', 'Kepala Dinas Kependudukan Dan Pencatatan Sipil'],
+  [27, 'Dr. Ir. H. Andi Marewangeng, S.T.,M.T', 'Kepala Dinas Kepemudaan Dan Olahraga'],
+  [28, 'Tri Anggoro Raharjo, S.Si., M.Si', 'Kepala Dinas Perkebunan'],
+  [29, 'H. Mulyadi, SE., M.Si', 'Kepala Dinas Perumahan Dan Kawasan Permukiman'],
+  [30, 'Drs. Yudha Budisantosa., M.Si', 'Kepala Dinas Perpustakaan Dan Kearsipan'],
+  [31, 'Sulaiman, SH', 'Kepala Dinas Pertanahan'],
+  [32, 'H.Rakhmadi Pasarakan, S.Hut., M.Sc', 'Kepala Dinas Pemadam Kebakaran dan Penyelamatan'],
+  [33, 'dr. Jusram, Sp.PD., FINASIM', 'Direktur RSUD dr. Abdul Rivai'],
+  [34, 'Ahmad Juhri, S.ST., MP.SSp', 'Camat Tanjung Redeb'],
+  [35, 'Lutfi Hidayat, SE', 'Camat Gunung Tabur'],
+  [36, 'Nur Alam, S.STP', 'Camat Sambaliung'],
+  [37, 'Edi Baskoro, S.STP', 'Camat Teluk Bayur'],
+  [38, 'Toris, SH', 'Camat Segah'],
+  [39, 'H. Muh. Saleh, S.P., M.A.P.', 'Camat Kelay'],
+  [40, 'Ashari, SE', 'Camat Maratua'],
+  [41, 'Ariyanto, SE', 'Camat Pulau Derawan'],
+  [42, 'Wahyudi, S.STP., M.E', 'Camat Tabalar'],
+  [43, 'Rusdiansyah, SE', 'Camat Biatan'],
+  [44, 'Mutmainnah, SE', 'Camat Talisayan'],
+  [45, 'Firmansyah, SE', 'Camat Batu Putih'],
+  [46, 'Cipto Supratmono, SE', 'Camat Biduk-Biduk'],
 ];
 
 function createInitialSignatories() {
-  const list = [
-    {
-      id: 'bupati',
-      rowNumber: 0,
-      isLeader: true,
+  const list = [];
+
+  // 4 Unsur Perwakilan Forum (Page 1/2 2x2 Signature Grid)
+  for (const rep of RAW_REPRESENTATIVES) {
+    list.push({
+      id: rep.id,
+      rowNumber: rep.slotOrder - 10, // negative so reps sort cleanly above Lampiran I 1..46
+      repOrder: rep.slotOrder,
+      isRepresentative: true,
       isCustom: false,
-      templateRowIndex: null,
-      name: DOCUMENT_META.leaderBlock.name,
-      role: DOCUMENT_META.leaderBlock.role,
-      category: 'Pimpinan Rapat',
+      name: rep.name,
+      role: rep.role,
+      roleLines: [...rep.roleLines],
       signed: false,
-      signatureMethod: null, // 'draw' | 'upload'
+      signatureMethod: null,
       signedAt: null,
-      representedBy: null, // { name, role } | null
       verificationHash: null,
       signatureWidth: null,
       signatureHeight: null,
       signatureVersion: 0,
-    },
-  ];
+    });
+  }
 
-  for (const [no, name, role] of RAW_TABLE_SIGNATORIES) {
+  // 46 Pihak Lampiran I
+  for (const [no, name, role] of RAW_LAMPIRAN_SIGNATORIES) {
     list.push({
       id: `row-${no}`,
       rowNumber: no,
-      isLeader: false,
+      repOrder: null,
+      isRepresentative: false,
       isCustom: false,
-      templateRowIndex: no, // 1-based row index inside Word table (row 0 is header)
       name,
       role,
-      category: classifyCategory(role, false, false),
+      roleLines: null,
       signed: false,
       signatureMethod: null,
       signedAt: null,
-      representedBy: null,
       verificationHash: null,
       signatureWidth: null,
       signatureHeight: null,
@@ -148,9 +178,14 @@ function createInitialSignatories() {
   return list;
 }
 
+function cloneDefaultDocumentMeta() {
+  return JSON.parse(JSON.stringify(DOCUMENT_META));
+}
+
 module.exports = {
   DOCUMENT_META,
-  RAW_TABLE_SIGNATORIES,
-  classifyCategory,
+  RAW_REPRESENTATIVES,
+  RAW_LAMPIRAN_SIGNATORIES,
   createInitialSignatories,
+  cloneDefaultDocumentMeta,
 };

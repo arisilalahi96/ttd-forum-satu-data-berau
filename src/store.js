@@ -4,10 +4,11 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
-const { DOCUMENT_META, classifyCategory, createInitialSignatories } = require('./seed');
+const { cloneDefaultDocumentMeta, createInitialSignatories } = require('./seed');
 const { computeVerificationHash } = require('./utils/pngTools');
 const { normalizeCode } = require('./utils/formatters');
 
+const SCHEMA_VERSION = 2;
 const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, '..', 'data'));
 const SIGNATURES_DIR = path.join(DATA_DIR, 'signatures');
 const STATE_FILE = path.join(DATA_DIR, 'store.json');
@@ -17,15 +18,15 @@ class ForumStore {
     this.mode = process.env.DATABASE_URL ? 'postgres' : 'file';
     this.pgPool = null;
     this.state = null;
-    this.signatureCache = new Map(); // id -> Buffer
+    this.signatureCache = new Map();
     this.writeQueue = Promise.resolve();
   }
 
-  _defaultState() {
+  _defaultState(preserveSettings = null) {
     return {
-      version: 1,
-      documentMeta: DOCUMENT_META,
-      settings: {
+      version: SCHEMA_VERSION,
+      documentMeta: cloneDefaultDocumentMeta(),
+      settings: preserveSettings || {
         meetingCode: normalizeCode(process.env.MEETING_CODE || 'SDI2026'),
         adminPin: String(process.env.ADMIN_PIN || '202600').trim(),
         locked: false,
@@ -39,7 +40,7 @@ class ForumStore {
           id: `log-init-${Date.now()}`,
           type: 'system',
           timestamp: new Date().toISOString(),
-          summary: 'Ruang penandatanganan Berita Acara Forum Satu Data Kabupaten Berau 2026 diinisialisasi.',
+          summary: 'Berita Acara Hasil Kesepakatan Forum Satu Data Kabupaten Berau 2026 siap digunakan.',
         },
       ],
     };
@@ -55,8 +56,6 @@ class ForumStore {
   }
 
   _syncEnvOverrides() {
-    // Allow environment variables to override initial defaults only if state is fresh,
-    // while keeping runtime admin updates persisted.
     if (!this.state.settings.meetingCode) {
       this.state.settings.meetingCode = normalizeCode(process.env.MEETING_CODE || 'SDI2026');
     }
@@ -69,13 +68,20 @@ class ForumStore {
     await fsp.mkdir(SIGNATURES_DIR, { recursive: true });
     if (fs.existsSync(STATE_FILE)) {
       const raw = await fsp.readFile(STATE_FILE, 'utf8');
-      this.state = JSON.parse(raw);
-      // Warm signature cache from disk
-      for (const s of this.state.signatories) {
-        if (s.signed) {
-          const p = path.join(SIGNATURES_DIR, `${s.id}.png`);
-          if (fs.existsSync(p)) {
-            this.signatureCache.set(s.id, await fsp.readFile(p));
+      const parsed = JSON.parse(raw);
+      if ((parsed.version || 1) < SCHEMA_VERSION) {
+        // Auto-migrate from v1 draft to v2 official Berita Acara while preserving Panitia settings
+        this.state = this._defaultState(parsed.settings || null);
+        this.signatureCache.clear();
+        await this._persistStateImmediate();
+      } else {
+        this.state = parsed;
+        for (const s of this.state.signatories) {
+          if (s.signed) {
+            const p = path.join(SIGNATURES_DIR, `${s.id}.png`);
+            if (fs.existsSync(p)) {
+              this.signatureCache.set(s.id, await fsp.readFile(p));
+            }
           }
         }
       }
@@ -113,10 +119,17 @@ class ForumStore {
 
     const res = await this.pgPool.query(`SELECT payload FROM fsd_app_state WHERE key = 'main'`);
     if (res.rows.length > 0) {
-      this.state = res.rows[0].payload;
-      const sigRes = await this.pgPool.query(`SELECT signatory_id, png_base64 FROM fsd_signatures`);
-      for (const row of sigRes.rows) {
-        this.signatureCache.set(row.signatory_id, Buffer.from(row.png_base64, 'base64'));
+      const parsed = res.rows[0].payload;
+      if ((parsed.version || 1) < SCHEMA_VERSION) {
+        this.state = this._defaultState(parsed.settings || null);
+        await this.pgPool.query(`DELETE FROM fsd_signatures`);
+        await this._persistStateImmediate();
+      } else {
+        this.state = parsed;
+        const sigRes = await this.pgPool.query(`SELECT signatory_id, png_base64 FROM fsd_signatures`);
+        for (const row of sigRes.rows) {
+          this.signatureCache.set(row.signatory_id, Buffer.from(row.png_base64, 'base64'));
+        }
       }
     } else {
       this.state = this._defaultState();
@@ -170,6 +183,10 @@ class ForumStore {
     }
   }
 
+  getDocumentMeta() {
+    return this.state.documentMeta;
+  }
+
   getSettings() {
     return { ...this.state.settings };
   }
@@ -181,16 +198,16 @@ class ForumStore {
 
   getStats() {
     const all = this.state.signatories;
-    const tableOnly = all.filter((s) => !s.isLeader);
-    const leader = all.find((s) => s.isLeader);
-    const signedTable = tableOnly.filter((s) => s.signed).length;
+    const reps = all.filter((s) => s.isRepresentative);
+    const lampiran = all.filter((s) => !s.isRepresentative);
     const signedTotal = all.filter((s) => s.signed).length;
     return {
       total: all.length,
       signed: signedTotal,
-      tableTotal: tableOnly.length,
-      tableSigned: signedTable,
-      leaderSigned: Boolean(leader && leader.signed),
+      repTotal: reps.length,
+      repSigned: reps.filter((s) => s.signed).length,
+      lampiranTotal: lampiran.length,
+      lampiranSigned: lampiran.filter((s) => s.signed).length,
       percentage: all.length > 0 ? Math.round((signedTotal / all.length) * 100) : 0,
     };
   }
@@ -232,13 +249,11 @@ class ForumStore {
       ...entry,
     };
     this.state.auditLogs.unshift(full);
-    if (this.state.auditLogs.length > 500) {
-      this.state.auditLogs.length = 500;
-    }
+    if (this.state.auditLogs.length > 500) this.state.auditLogs.length = 500;
     return full;
   }
 
-  async saveSignature(id, { pngBuffer, width, height, method, representedBy, allowOverwrite = false }) {
+  async saveSignature(id, { pngBuffer, width, height, method, allowOverwrite = false }) {
     const signatory = this.getSignatory(id);
     if (!signatory) {
       const err = new Error('Data penandatangan tidak ditemukan.');
@@ -246,32 +261,22 @@ class ForumStore {
       throw err;
     }
     if (this.state.settings.locked && !allowOverwrite) {
-      const err = new Error('Dokumen telah dikunci oleh Panitia dan tidak menerima tanda tangan baru.');
+      const err = new Error('Dokumen telah dikunci oleh Panitia.');
       err.status = 423;
       throw err;
     }
     if (signatory.signed && !allowOverwrite) {
-      const err = new Error(
-        `Baris ${signatory.name} sudah ditandatangani. Hubungi Panitia jika perlu mengubah tanda tangan.`
-      );
+      const err = new Error(`Baris ${signatory.name} sudah ditandatangani.`);
       err.status = 409;
       throw err;
     }
 
     const signedAt = new Date().toISOString();
-    const cleanRep =
-      representedBy && representedBy.name && representedBy.name.trim()
-        ? {
-            name: representedBy.name.trim().slice(0, 140),
-            role: (representedBy.role || '').trim().slice(0, 160),
-          }
-        : null;
-
     const hash = computeVerificationHash({
-      documentId: DOCUMENT_META.id,
+      documentId: this.state.documentMeta.id,
       signatoryId: signatory.id,
       name: signatory.name,
-      representedBy: cleanRep,
+      representedBy: null,
       signedAt,
       pngBuffer,
     });
@@ -279,7 +284,6 @@ class ForumStore {
     signatory.signed = true;
     signatory.signatureMethod = method === 'upload' ? 'upload' : 'draw';
     signatory.signedAt = signedAt;
-    signatory.representedBy = cleanRep;
     signatory.verificationHash = hash;
     signatory.signatureWidth = width;
     signatory.signatureHeight = height;
@@ -288,17 +292,14 @@ class ForumStore {
     this.signatureCache.set(signatory.id, pngBuffer);
 
     const methodLabel = signatory.signatureMethod === 'upload' ? 'unggah gambar' : 'goresan langsung';
-    const repLabel = cleanRep ? ` (diwakili a.n. ${cleanRep.name})` : '';
     const auditEntry = this._pushAudit({
       type: 'signed',
       signatoryId: signatory.id,
-      rowNumber: signatory.rowNumber,
       name: signatory.name,
       role: signatory.role,
-      representedBy: cleanRep,
       method: signatory.signatureMethod,
       verificationHash: hash,
-      summary: `${signatory.name}${repLabel} menandatangani via ${methodLabel}.`,
+      summary: `${signatory.name} menandatangani via ${methodLabel}.`,
     });
 
     await this._enqueuePersist(async () => {
@@ -324,7 +325,6 @@ class ForumStore {
     signatory.signed = false;
     signatory.signatureMethod = null;
     signatory.signedAt = null;
-    signatory.representedBy = null;
     signatory.verificationHash = null;
     signatory.signatureWidth = null;
     signatory.signatureHeight = null;
@@ -336,8 +336,7 @@ class ForumStore {
       type: 'cleared',
       signatoryId: signatory.id,
       name: signatory.name,
-      role: signatory.role,
-      summary: `Panitia mengatur ulang tanda tangan ${signatory.name}${reason ? ` (${reason})` : ''}.`,
+      summary: `Panitia menghapus/mereset tanda tangan ${signatory.name}${reason ? ` (${reason})` : ''}.`,
     });
 
     await this._enqueuePersist(async () => {
@@ -352,40 +351,33 @@ class ForumStore {
     };
   }
 
-  async addSignatory({ name, role, isAdmin = false }) {
-    if (!isAdmin && (!this.state.settings.allowSelfAdd || this.state.settings.locked)) {
-      const err = new Error('Penambahan peserta baru sedang dinonaktifkan oleh Panitia.');
-      err.status = 403;
-      throw err;
-    }
-    const cleanName = String(name || '').trim().slice(0, 140);
-    const cleanRole = String(role || '').trim().slice(0, 180);
+  async addSignatory({ name, role }) {
+    const cleanName = String(name || '').trim().slice(0, 160);
+    const cleanRole = String(role || '').trim().slice(0, 220);
     if (cleanName.length < 2 || cleanRole.length < 2) {
-      const err = new Error('Nama lengkap dan Jabatan/Instansi wajib diisi.');
+      const err = new Error('Nama lengkap dan Lembaga/Instansi/Jabatan wajib diisi.');
       err.status = 400;
       throw err;
     }
 
-    const maxRow = this.state.signatories.reduce(
-      (max, s) => (s.rowNumber > max ? s.rowNumber : max),
-      54
-    );
+    const maxRow = this.state.signatories
+      .filter((s) => !s.isRepresentative)
+      .reduce((max, s) => (s.rowNumber > max ? s.rowNumber : max), 46);
     const nextRow = maxRow + 1;
     const newId = `custom-${nextRow}-${crypto.randomBytes(2).toString('hex')}`;
 
     const entry = {
       id: newId,
       rowNumber: nextRow,
-      isLeader: false,
+      repOrder: null,
+      isRepresentative: false,
       isCustom: true,
-      templateRowIndex: null,
       name: cleanName,
       role: cleanRole,
-      category: classifyCategory(cleanRole, false, true),
+      roleLines: null,
       signed: false,
       signatureMethod: null,
       signedAt: null,
-      representedBy: null,
       verificationHash: null,
       signatureWidth: null,
       signatureHeight: null,
@@ -397,10 +389,8 @@ class ForumStore {
     const auditEntry = this._pushAudit({
       type: 'added',
       signatoryId: entry.id,
-      rowNumber: entry.rowNumber,
       name: entry.name,
-      role: entry.role,
-      summary: `Peserta tambahan #${entry.rowNumber} (${entry.name} — ${entry.role}) ditambahkan ke daftar.`,
+      summary: `Panitia menambahkan peserta #${entry.rowNumber}: ${entry.name} (${entry.role}).`,
     });
 
     await this._enqueuePersist(() => this._persistStateImmediate());
@@ -419,8 +409,8 @@ class ForumStore {
       err.status = 404;
       throw err;
     }
-    const cleanName = String(name || '').trim().slice(0, 140);
-    const cleanRole = String(role || '').trim().slice(0, 180);
+    const cleanName = String(name || '').trim().slice(0, 160);
+    const cleanRole = String(role || '').trim().slice(0, 260);
     if (cleanName.length < 2 || cleanRole.length < 2) {
       const err = new Error('Nama dan Jabatan/Instansi tidak boleh kosong.');
       err.status = 400;
@@ -428,17 +418,20 @@ class ForumStore {
     }
 
     signatory.name = cleanName;
-    signatory.role = cleanRole;
-    if (!signatory.isLeader) {
-      signatory.category = classifyCategory(cleanRole, false, signatory.isCustom);
+    signatory.role = cleanRole.replace(/\r?\n/g, ' — ');
+    if (signatory.isRepresentative) {
+      const lines = cleanRole
+        .split(/\r?\n|—/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+      signatory.roleLines = lines.length ? lines : [signatory.role];
     }
 
     const auditEntry = this._pushAudit({
       type: 'updated',
       signatoryId: signatory.id,
       name: signatory.name,
-      role: signatory.role,
-      summary: `Panitia memperbarui data ${signatory.name} (${signatory.role}).`,
+      summary: `Panitia memperbarui data ${signatory.name}.`,
     });
 
     await this._enqueuePersist(() => this._persistStateImmediate());
@@ -459,7 +452,7 @@ class ForumStore {
     }
     const target = this.state.signatories[idx];
     if (!target.isCustom) {
-      const err = new Error('Baris bawaan dari Berita Acara tidak dapat dihapus, hanya dapat diatur ulang tanda tangannya.');
+      const err = new Error('Baris bawaan Berita Acara tidak dapat dihapus, hanya dapat direset TTD-nya.');
       err.status = 400;
       throw err;
     }
@@ -467,18 +460,14 @@ class ForumStore {
     this.state.signatories.splice(idx, 1);
     this.signatureCache.delete(id);
 
-    // Re-number custom rows sequentially after 54
-    let seq = 55;
+    let seq = 47;
     for (const s of this.state.signatories) {
-      if (s.isCustom) {
-        s.rowNumber = seq++;
-      }
+      if (s.isCustom) s.rowNumber = seq++;
     }
 
     const auditEntry = this._pushAudit({
       type: 'deleted',
       signatoryId: id,
-      name: target.name,
       summary: `Panitia menghapus peserta tambahan ${target.name}.`,
     });
 
@@ -495,10 +484,52 @@ class ForumStore {
     };
   }
 
+  async updateDocumentMeta(patch) {
+    const m = this.state.documentMeta;
+    const str = (v, max = 1200) => String(v ?? '').trim().slice(0, max);
+
+    if (Array.isArray(patch.titleLines)) {
+      const lines = patch.titleLines.map((l) => str(l, 160)).filter(Boolean);
+      if (lines.length) m.titleLines = lines;
+    }
+    if (typeof patch.documentNumber === 'string') m.documentNumber = str(patch.documentNumber, 160);
+    if (typeof patch.openingParagraph === 'string') m.openingParagraph = str(patch.openingParagraph, 2000);
+    if (typeof patch.considerationsHeading === 'string') m.considerationsHeading = str(patch.considerationsHeading, 300);
+    if (Array.isArray(patch.considerations)) {
+      m.considerations = patch.considerations.map((c) => str(c, 1000)).filter(Boolean);
+    }
+    if (typeof patch.eventLead === 'string') m.eventLead = str(patch.eventLead, 160);
+    if (Array.isArray(patch.eventDetails)) {
+      const rows = patch.eventDetails
+        .map((r) => ({ label: str(r?.label, 100), value: str(r?.value, 500) }))
+        .filter((r) => r.label || r.value);
+      if (rows.length) m.eventDetails = rows;
+    }
+    if (typeof patch.agreementLead === 'string') m.agreementLead = str(patch.agreementLead, 300);
+    if (typeof patch.agreementHeading === 'string') m.agreementHeading = str(patch.agreementHeading, 160);
+    if (Array.isArray(patch.agreements)) {
+      const rows = patch.agreements
+        .map((r) => ({ label: str(r?.label, 80), value: str(r?.value, 1000) }))
+        .filter((r) => r.label || r.value);
+      if (rows.length) m.agreements = rows;
+    }
+    if (typeof patch.closingParagraph === 'string') m.closingParagraph = str(patch.closingParagraph, 1200);
+    if (typeof patch.representativesHeading === 'string') m.representativesHeading = str(patch.representativesHeading, 240);
+    if (typeof patch.lampiranHeading === 'string') m.lampiranHeading = str(patch.lampiranHeading, 120);
+    if (typeof patch.lampiranSubheading === 'string') m.lampiranSubheading = str(patch.lampiranSubheading, 400);
+
+    const auditEntry = this._pushAudit({
+      type: 'settings',
+      summary: 'Panitia memperbarui teks naskah Berita Acara.',
+    });
+
+    await this._enqueuePersist(() => this._persistStateImmediate());
+    return { documentMeta: this.state.documentMeta, auditEntry };
+  }
+
   async updateSettings(patch) {
     const s = this.state.settings;
     if (typeof patch.locked === 'boolean') s.locked = patch.locked;
-    if (typeof patch.allowSelfAdd === 'boolean') s.allowSelfAdd = patch.allowSelfAdd;
     if (typeof patch.requireMeetingCode === 'boolean') s.requireMeetingCode = patch.requireMeetingCode;
     if (typeof patch.meetingCode === 'string' && patch.meetingCode.trim().length >= 3) {
       s.meetingCode = normalizeCode(patch.meetingCode).slice(0, 20);

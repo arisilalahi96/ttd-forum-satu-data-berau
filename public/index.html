@@ -72,17 +72,17 @@
             <div id="exportMenuPanel" class="dropdown-menu hidden" role="menu">
               <a id="dlFullDocx" class="dropdown-item" href="#">
                 <strong>Word (.docx)</strong>
-                <small>Berita Acara lengkap</small>
+                <small>Berita Acara lengkap (A4)</small>
               </a>
               <a id="dlFullPdf" class="dropdown-item" href="#">
                 <strong>PDF (.pdf)</strong>
-                <small>Berita Acara lengkap ukuran F4</small>
+                <small>Berita Acara lengkap ukuran A4</small>
               </a>
               <div id="adminExportExtras" class="hidden">
                 <div class="dropdown-sep"></div>
                 <button type="button" id="printDocBtn" class="dropdown-item">
                   <strong>Cetak langsung</strong>
-                  <small>Print dari browser (F4)</small>
+                  <small>Print dari browser (A4)</small>
                 </button>
                 <a id="dlRekapCsv" class="dropdown-item" href="#">
                   <strong>Rekap Daftar (.csv)</strong>
@@ -100,6 +100,7 @@
             </div>
           </div>
 
+          <button type="button" id="adminEditDocBtn" class="btn btn-outline btn-sm hidden">Edit Naskah</button>
           <button type="button" id="qrBtn" class="btn btn-outline btn-sm hidden">QR</button>
           <button type="button" id="adminEnterBtn" class="btn btn-outline btn-sm">Panitia</button>
           <button type="button" id="adminSettingsBtn" class="btn btn-outline btn-sm hidden">Pengaturan</button>
@@ -113,11 +114,11 @@
       <section class="doc-masthead no-print">
         <div class="masthead-top">
           <div>
-            <h1 class="page-title">Berita Acara Kesepakatan Forum Satu Data Kabupaten Berau 2026</h1>
-            <p class="page-subtitle">Rabu, 25 November 2026 · Ruang Rapat RKPD Bapperida Kabupaten Berau</p>
+            <h1 class="page-title" id="mastheadTitle">Berita Acara Hasil Kesepakatan Forum Satu Data Kabupaten Berau 2026</h1>
+            <p class="page-subtitle" id="mastheadSubtitle">Rabu, 25 November 2026 · Ruang Rapat RKPD Bapperida Kabupaten Berau</p>
           </div>
           <div class="masthead-progress-text">
-            <span class="mono"><strong id="statSignedCount">0</strong> / <span id="statTotalCount">55</span></span>
+            <span class="mono"><strong id="statSignedCount">0</strong> / <span id="statTotalCount">50</span></span>
             <span class="muted">menandatangani (<span id="statPct">0%</span>)</span>
           </div>
         </div>
@@ -491,6 +492,93 @@
         <div class="modal-footer">
           <button type="button" id="cancelEditBtn" class="btn btn-outline">Batal</button>
           <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== MODAL 8: EDIT TEKS NASKAH BERITA ACARA (PANITIA ONLY) ===== -->
+  <div id="editDocModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="editDocModalTitle">
+    <div class="modal-panel modal-wide">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">Mode Panitia</p>
+          <h2 class="modal-title" id="editDocModalTitle">Edit Teks Naskah Berita Acara</h2>
+          <p class="modal-subtitle">Perubahan otomatis diterapkan ke Tampilan Naskah, file Word (.docx), dan PDF (.pdf).</p>
+        </div>
+        <button type="button" class="icon-close" id="closeEditDocBtn" aria-label="Tutup">&times;</button>
+      </div>
+      <form id="editDocForm">
+        <div class="modal-body">
+          <div class="doc-edit-grid">
+            <div class="field-group">
+              <label for="edTitleLines" class="field-label">Judul Dokumen <span class="muted">(1 baris per baris judul)</span></label>
+              <textarea id="edTitleLines" class="input-control textarea-sm" rows="3"></textarea>
+            </div>
+            <div class="field-group">
+              <label for="edDocNumber" class="field-label">Nomor Surat</label>
+              <input id="edDocNumber" type="text" class="input-control" />
+              <label for="edRepHeading" class="field-label" style="margin-top:10px">Judul Blok 4 Perwakilan</label>
+              <input id="edRepHeading" type="text" class="input-control" />
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="edOpening" class="field-label">Paragraf Pembuka</label>
+            <textarea id="edOpening" class="input-control" rows="3"></textarea>
+          </div>
+
+          <div class="field-group">
+            <label for="edConsiderationsHeading" class="field-label">Kalimat Pengantar Pertimbangan</label>
+            <input id="edConsiderationsHeading" type="text" class="input-control" />
+          </div>
+
+          <div class="field-group">
+            <label for="edConsiderations" class="field-label">Daftar Poin Pertimbangan &amp; Materi <span class="muted">(1 poin per baris — ganti “………” dengan tema materi)</span></label>
+            <textarea id="edConsiderations" class="input-control" rows="7"></textarea>
+          </div>
+
+          <div class="doc-edit-grid-3">
+            <div class="field-group">
+              <label for="edDate" class="field-label">Hari dan Tanggal</label>
+              <input id="edDate" type="text" class="input-control" />
+            </div>
+            <div class="field-group">
+              <label for="edTime" class="field-label">Waktu</label>
+              <input id="edTime" type="text" class="input-control" />
+            </div>
+            <div class="field-group">
+              <label for="edPlace" class="field-label">Tempat</label>
+              <input id="edPlace" type="text" class="input-control" />
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="edAgreements" class="field-label">Poin MENYEPAKATI <span class="muted">(format per baris: Label | Isi kesepakatan)</span></label>
+            <textarea id="edAgreements" class="input-control" rows="4"></textarea>
+          </div>
+
+          <div class="field-group">
+            <label for="edClosing" class="field-label">Paragraf Penutup</label>
+            <textarea id="edClosing" class="input-control" rows="2"></textarea>
+          </div>
+
+          <div class="doc-edit-grid">
+            <div class="field-group">
+              <label for="edLampiranHeading" class="field-label">Judul Lampiran</label>
+              <input id="edLampiranHeading" type="text" class="input-control" />
+            </div>
+            <div class="field-group">
+              <label for="edLampiranSub" class="field-label">Keterangan Lampiran</label>
+              <input id="edLampiranSub" type="text" class="input-control" />
+            </div>
+          </div>
+
+          <div id="editDocError" class="msg-inline msg-error hidden"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelEditDocBtn" class="btn btn-outline">Batal</button>
+          <button type="submit" id="saveEditDocBtn" class="btn btn-primary">Simpan Perubahan Naskah</button>
         </div>
       </form>
     </div>

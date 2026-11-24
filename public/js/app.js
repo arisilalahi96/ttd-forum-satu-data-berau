@@ -165,7 +165,8 @@ async function bootstrap() {
     state.isAdmin = Boolean(boot.isAdmin);
     state.onlineCount = boot.onlineCount || 1;
 
-    $('gateEventDate').textContent = boot.documentMeta.eventDateLabel;
+    const dateDetail = (boot.documentMeta.eventDetails || []).find((r) => /tanggal/i.test(r.label));
+    $('gateEventDate').textContent = (dateDetail && dateDetail.value) || 'Rabu, 25 November 2026';
     $('gateProgress').textContent = `${boot.stats.signed} / ${boot.stats.total} pihak`;
 
     if (boot.authorized) await enterMainApp();
@@ -348,6 +349,13 @@ function handleWsMessage(msg) {
       showToast(state.settings.locked ? 'Dokumen dikunci oleh Panitia.' : 'Pengaturan diperbarui.');
       break;
 
+    case 'document_updated':
+      if (msg.documentMeta) state.documentMeta = msg.documentMeta;
+      if (msg.auditEntry) state.auditLogs.unshift(msg.auditEntry);
+      renderAll();
+      showToast('Teks naskah Berita Acara diperbarui oleh Panitia.');
+      break;
+
     default:
       break;
   }
@@ -372,6 +380,7 @@ function renderChrome() {
   $('adminBadge').classList.toggle('hidden', !admin);
   $('lockedBadge').classList.toggle('hidden', !state.settings.locked);
   $('adminEnterBtn').classList.toggle('hidden', admin);
+  $('adminEditDocBtn').classList.toggle('hidden', !admin);
   $('adminSettingsBtn').classList.toggle('hidden', !admin);
   $('adminExitBtn').classList.toggle('hidden', !admin);
   $('addParticipantBtn').classList.toggle('hidden', !admin);
@@ -383,6 +392,16 @@ function renderChrome() {
   $('dlRekapCsv').href = buildDownloadUrl('/api/export/rekap.csv');
   $('dlZipDocx').href = buildDownloadUrl('/api/export/bundle-docx.zip');
   $('dlZipPdf').href = buildDownloadUrl('/api/export/bundle-pdf.zip');
+
+  if (state.documentMeta) {
+    const m = state.documentMeta;
+    const titleStr = (m.titleLines || []).join(' ').trim();
+    if (titleStr) $('mastheadTitle').textContent = titleStr;
+    const dateRow = (m.eventDetails || []).find((r) => /tanggal/i.test(r.label));
+    const timeRow = (m.eventDetails || []).find((r) => /waktu/i.test(r.label));
+    const subParts = [dateRow?.value, timeRow?.value, m.documentNumber?.trim()].filter(Boolean);
+    if (subParts.length) $('mastheadSubtitle').textContent = subParts.join(' · ');
+  }
 }
 
 function renderSummary() {
@@ -406,7 +425,7 @@ function getFilteredSignatories() {
       if (state.statusFilter === 'signed' && !s.signed) return false;
       if (state.statusFilter === 'unsigned' && s.signed) return false;
       if (!q) return true;
-      return [s.isLeader ? 'bupati pimpinan' : String(s.rowNumber), s.name, s.role]
+      return [s.isRepresentative ? `unsur perwakilan ${s.repOrder}` : String(s.rowNumber), s.name, s.role]
         .join(' ')
         .toLowerCase()
         .includes(q);
@@ -433,12 +452,12 @@ function renderList() {
       const isFresh = state.recentlySignedIds.has(s.id);
 
       const classes = ['ledger-row'];
-      if (s.isLeader) classes.push('is-leader');
+      if (s.isRepresentative) classes.push('is-leader');
       if (isBusy) classes.push('is-busy');
       if (isFresh) classes.push('row-flash');
 
-      const noCell = s.isLeader
-        ? `<div class="r-no-leader">Pimpinan</div>`
+      const noCell = s.isRepresentative
+        ? `<div class="r-no-leader">Unsur ${s.repOrder || ''}</div>`
         : `<div class="r-no">${String(s.rowNumber).padStart(2, '0')}</div>`;
 
       let sigCell = '';
@@ -569,9 +588,9 @@ function openSignModal(signatoryId) {
     if (state.signingSignatoryId) wsSend({ type: 'lock_renew', signatoryId: state.signingSignatoryId });
   }, 45_000);
 
-  $('signModalKicker').textContent = sig.isLeader
-    ? 'Pimpinan Rapat · Bupati Berau'
-    : `Penandatanganan · No. ${sig.rowNumber}`;
+  $('signModalKicker').textContent = sig.isRepresentative
+    ? `Perwakilan Unsur Peserta · Slot ${sig.repOrder}`
+    : `Lampiran I · No. ${sig.rowNumber}`;
   $('signModalTitle').textContent = sig.name;
   $('signModalRole').textContent = sig.role;
   $('signError').classList.add('hidden');
@@ -692,7 +711,7 @@ function openDetailModal(signatoryId) {
       <img src="${esc(sig.signatureUrl)}" alt="Tanda tangan ${esc(sig.name)}" />
     </div>
     <div class="detail-meta-list">
-      <div class="detail-meta-row"><span>Nomor Urut</span><span class="mono">${sig.isLeader ? 'Pimpinan' : `No. ${sig.rowNumber}`}</span></div>
+      <div class="detail-meta-row"><span>Bagian</span><span class="mono">${sig.isRepresentative ? `Unsur ${sig.repOrder}` : `Lampiran I — No. ${sig.rowNumber}`}</span></div>
       <div class="detail-meta-row"><span>Waktu</span><span>${esc(formatWitaFull(sig.signedAt))}</span></div>
       <div class="detail-meta-row"><span>Verifikasi</span><span class="mono">${esc(sig.verificationHash || '-')}</span></div>
     </div>
@@ -811,12 +830,38 @@ function openEditModal(id) {
   $('editModal').classList.remove('hidden');
 }
 
+function openEditDocModal() {
+  if (!state.isAdmin || !state.documentMeta) return;
+  const m = state.documentMeta;
+  $('edTitleLines').value = (m.titleLines || []).join('\n');
+  $('edDocNumber').value = m.documentNumber || '';
+  $('edRepHeading').value = m.representativesHeading || '';
+  $('edOpening').value = m.openingParagraph || '';
+  $('edConsiderationsHeading').value = m.considerationsHeading || '';
+  $('edConsiderations').value = (m.considerations || []).join('\n');
+
+  const ed = m.eventDetails || [];
+  $('edDate').value = (ed.find((r) => /tanggal/i.test(r.label)) || ed[0] || {}).value || '';
+  $('edTime').value = (ed.find((r) => /waktu/i.test(r.label)) || ed[1] || {}).value || '';
+  $('edPlace').value = (ed.find((r) => /tempat/i.test(r.label)) || ed[2] || {}).value || '';
+
+  $('edAgreements').value = (m.agreements || [])
+    .map((r) => `${r.label} | ${r.value}`)
+    .join('\n');
+  $('edClosing').value = m.closingParagraph || '';
+  $('edLampiranHeading').value = m.lampiranHeading || 'LAMPIRAN I';
+  $('edLampiranSub').value = m.lampiranSubheading || '';
+  $('editDocError').classList.add('hidden');
+  $('editDocModal').classList.remove('hidden');
+}
+
 async function exitAdminMode() {
   await fetch('/api/auth/logout-admin', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
   state.isAdmin = false;
   state.adminToken = '';
   localStorage.removeItem(STORAGE_KEYS.adminToken);
   $('settingsModal').classList.add('hidden');
+  $('editDocModal').classList.add('hidden');
   renderAll();
   showToast('Keluar dari Mode Panitia.');
 }
@@ -881,6 +926,62 @@ function bindEvents() {
   };
   $('gateAdminLink').addEventListener('click', openAdminLogin);
   $('adminEnterBtn').addEventListener('click', openAdminLogin);
+  $('adminEditDocBtn').addEventListener('click', openEditDocModal);
+  $('closeEditDocBtn').addEventListener('click', () => $('editDocModal').classList.add('hidden'));
+  $('cancelEditDocBtn').addEventListener('click', () => $('editDocModal').classList.add('hidden'));
+  $('editDocForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = $('editDocError');
+    errEl.classList.add('hidden');
+    const btn = $('saveEditDocBtn');
+    btn.disabled = true;
+
+    const agreements = $('edAgreements')
+      .value.split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, idx) => {
+        const sep = line.indexOf('|');
+        if (sep !== -1) {
+          return { label: line.slice(0, sep).trim(), value: line.slice(sep + 1).trim() };
+        }
+        return { label: idx === 0 ? 'Kesatu' : idx === 1 ? 'Kedua' : `Poin ${idx + 1}`, value: line };
+      });
+
+    const payload = {
+      titleLines: $('edTitleLines').value.split('\n').map((l) => l.trim()).filter(Boolean),
+      documentNumber: $('edDocNumber').value,
+      representativesHeading: $('edRepHeading').value,
+      openingParagraph: $('edOpening').value,
+      considerationsHeading: $('edConsiderationsHeading').value,
+      considerations: $('edConsiderations').value.split('\n').map((l) => l.trim()).filter(Boolean),
+      eventDetails: [
+        { label: 'Hari dan tanggal', value: $('edDate').value.trim() },
+        { label: 'Waktu', value: $('edTime').value.trim() },
+        { label: 'Tempat', value: $('edPlace').value.trim() },
+      ],
+      agreements,
+      closingParagraph: $('edClosing').value,
+      lampiranHeading: $('edLampiranHeading').value,
+      lampiranSubheading: $('edLampiranSub').value,
+    };
+
+    try {
+      const res = await apiFetch('/api/admin/document', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      if (res.documentMeta) state.documentMeta = res.documentMeta;
+      $('editDocModal').classList.add('hidden');
+      renderAll();
+      showToast('Teks naskah Berita Acara berhasil diperbarui.');
+    } catch (err) {
+      errEl.textContent = err.message || 'Gagal menyimpan teks naskah.';
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+    }
+  });
   $('closeAdminLoginBtn').addEventListener('click', () => $('adminLoginModal').classList.add('hidden'));
   $('cancelAdminLoginBtn').addEventListener('click', () => $('adminLoginModal').classList.add('hidden'));
   $('adminSettingsBtn').addEventListener('click', openSettingsModal);
@@ -1174,6 +1275,7 @@ function bindEvents() {
     else if (!$('qrModal').classList.contains('hidden')) $('qrModal').classList.add('hidden');
     else if (!$('adminLoginModal').classList.contains('hidden')) $('adminLoginModal').classList.add('hidden');
     else if (!$('settingsModal').classList.contains('hidden')) $('settingsModal').classList.add('hidden');
+    else if (!$('editDocModal').classList.contains('hidden')) $('editDocModal').classList.add('hidden');
     else if (!$('editModal').classList.contains('hidden')) $('editModal').classList.add('hidden');
   });
 }

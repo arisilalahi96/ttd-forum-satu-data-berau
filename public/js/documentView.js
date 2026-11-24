@@ -7,97 +7,133 @@ function esc(str) {
 }
 
 /**
- * Renders the live F4/Folio official Berita Acara document sheet preview.
- * Every signature appears immediately in-place, and clicking any slot triggers signing or detail view.
+ * Renders the live A4 Berita Acara Hasil Kesepakatan Forum Satu Data Kabupaten Berau 2026.
+ * Matches BERITA ACARA HASIL KESEPAKATAN_Baru.docx with live clickable signature slots for both
+ * the 2x2 "Mewakili unsur peserta" grid and the LAMPIRAN I table.
  */
 export function renderOfficialDocument({ container, documentMeta, signatories, locks, clientId, locked }) {
   if (!container || !documentMeta) return;
 
-  const leader = signatories.find((s) => s.isLeader);
-  const tableRows = signatories.filter((s) => !s.isLeader).sort((a, b) => a.rowNumber - b.rowNumber);
+  const reps = signatories
+    .filter((s) => s.isRepresentative)
+    .sort((a, b) => (a.repOrder || 0) - (b.repOrder || 0));
+  const lampiran = signatories
+    .filter((s) => !s.isRepresentative)
+    .sort((a, b) => a.rowNumber - b.rowNumber);
 
-  const leaderLock = leader ? locks[leader.id] : null;
-  const leaderBusy = leaderLock && leaderLock.clientId !== clientId;
+  const eventRowsHtml = (documentMeta.eventDetails || [])
+    .map(
+      (r) => `
+      <tr>
+        <td class="kv-lbl">${esc(r.label)}</td>
+        <td class="kv-colon">:</td>
+        <td class="kv-val">${esc(r.value)}</td>
+      </tr>
+    `
+    )
+    .join('');
 
-  let leaderSlotHtml = '';
-  if (leader && leader.signed && leader.signatureUrl) {
-    const repHtml =
-      leader.representedBy && leader.representedBy.name
-        ? `<div class="paper-sig-rep">a.n. ${esc(leader.representedBy.name)}${
-            leader.representedBy.role ? ` (${esc(leader.representedBy.role)})` : ''
-          }</div>`
-        : '';
-    leaderSlotHtml = `
-      <div class="paper-leader-sig-slot" data-doc-action="detail" data-id="${esc(leader.id)}" title="Klik untuk melihat bukti verifikasi">
-        <img src="${esc(leader.signatureUrl)}" alt="Tanda tangan ${esc(leader.name)}" />
-        ${repHtml}
-      </div>
-    `;
-  } else if (leaderBusy) {
-    leaderSlotHtml = `
-      <div class="paper-leader-sig-slot is-unsigned" data-doc-action="sign" data-id="${esc(leader.id)}">
-        <span style="color:#B45309;font-size:12px;font-weight:600">Sedang diisi oleh ${esc(leaderLock.holderName)}...</span>
-      </div>
-    `;
-  } else {
-    leaderSlotHtml = `
-      <div class="paper-leader-sig-slot is-unsigned" data-doc-action="sign" data-id="${esc(leader ? leader.id : 'bupati')}" title="Klik untuk menandatangani">
-        ${locked ? '<span class="paper-dots">(Dokumen dikunci)</span>' : '<span class="paper-click-hint">Klik untuk membubuhkan tanda tangan</span>'}
-      </div>
-    `;
-  }
+  const agreeRowsHtml = (documentMeta.agreements || [])
+    .map(
+      (r) => `
+      <tr>
+        <td class="kv-lbl kv-lbl-sm">${esc(r.label)}</td>
+        <td class="kv-colon">:</td>
+        <td class="kv-val">${esc(r.value)}</td>
+      </tr>
+    `
+    )
+    .join('');
+
+  const repsGridHtml = reps
+    .map((rep) => {
+      const lock = locks[rep.id];
+      const isBusy = lock && lock.clientId !== clientId;
+      const roleLines =
+        Array.isArray(rep.roleLines) && rep.roleLines.length ? rep.roleLines : [rep.role];
+
+      let slotHtml = '';
+      if (rep.signed && rep.signatureUrl) {
+        slotHtml = `
+          <div class="rep-sig-slot" data-doc-action="detail" data-id="${esc(rep.id)}" title="Klik untuk melihat bukti">
+            <img src="${esc(rep.signatureUrl)}" alt="TTD ${esc(rep.name)}" />
+          </div>
+        `;
+      } else if (isBusy) {
+        slotHtml = `
+          <div class="rep-sig-slot is-unsigned cell-busy" data-doc-action="sign" data-id="${esc(rep.id)}">
+            <span style="color:#B45309;font-size:11.5px;font-weight:500">Sedang diisi...</span>
+          </div>
+        `;
+      } else {
+        slotHtml = `
+          <div class="rep-sig-slot is-unsigned" data-doc-action="sign" data-id="${esc(rep.id)}" title="Klik untuk menandatangani">
+            ${locked ? '<span class="paper-dots">(Dikunci)</span>' : '<span class="paper-click-hint">Klik untuk TTD</span>'}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="rep-cell">
+          <div class="rep-role-lines">${roleLines.map((l) => `<div>${esc(l)}</div>`).join('')}</div>
+          ${slotHtml}
+          <div class="rep-name">${esc(rep.name)}</div>
+        </div>
+      `;
+    })
+    .join('');
 
   const page1Html = `
     <article class="paper-sheet">
       <div class="paper-title">
-        ${documentMeta.titleLines.map((l) => `<div>${esc(l)}</div>`).join('')}
+        ${(documentMeta.titleLines || []).map((l) => `<div>${esc(l)}</div>`).join('')}
       </div>
+      ${documentMeta.documentNumber ? `<p class="paper-doc-num">${esc(documentMeta.documentNumber)}</p>` : ''}
 
-      ${documentMeta.paragraphsBeforePoints.map((p) => `<p class="paper-p">${esc(p)}</p>`).join('')}
+      <p class="paper-p">${esc(documentMeta.openingParagraph)}</p>
 
+      ${documentMeta.considerationsHeading ? `<p class="paper-p" style="margin-bottom:6px">${esc(documentMeta.considerationsHeading)}</p>` : ''}
       <ol class="paper-ol">
-        ${documentMeta.agreementPoints.map((pt) => `<li>${esc(pt)}</li>`).join('')}
+        ${(documentMeta.considerations || []).map((pt) => `<li>${esc(pt)}</li>`).join('')}
       </ol>
 
-      <p class="paper-p">${esc(documentMeta.closingParagraph)}</p>
+      ${documentMeta.eventLead ? `<p class="paper-p" style="margin-bottom:6px">${esc(documentMeta.eventLead)}</p>` : ''}
+      <table class="paper-kv-table">${eventRowsHtml}</table>
 
-      <div class="paper-leader-block">
-        <div class="paper-leader-lines">
-          ${documentMeta.leaderBlock.lines.map((l) => `<p>${esc(l)}</p>`).join('')}
-        </div>
-        ${leaderSlotHtml}
-        <p class="paper-leader-name">${esc(leader ? leader.name : documentMeta.leaderBlock.name)}</p>
+      ${documentMeta.agreementLead ? `<p class="paper-p" style="margin-top:14px;margin-bottom:6px">${esc(documentMeta.agreementLead)}</p>` : ''}
+      ${documentMeta.agreementHeading ? `<p class="paper-center-bold">${esc(documentMeta.agreementHeading)}</p>` : ''}
+      <table class="paper-kv-table">${agreeRowsHtml}</table>
+
+      <p class="paper-p" style="margin-top:14px">${esc(documentMeta.closingParagraph)}</p>
+
+      <div class="rep-section">
+        <p class="paper-center-bold">${esc(documentMeta.representativesHeading || 'Mewakili unsur peserta Forum Satu Data Tahun 2026')}</p>
+        <div class="rep-grid-2x2">${repsGridHtml}</div>
       </div>
     </article>
   `;
 
-  const rowsHtml = tableRows
+  const lampiranRowsHtml = lampiran
     .map((s) => {
-      const rowLock = locks[s.id];
-      const isBusy = rowLock && rowLock.clientId !== clientId;
+      const lock = locks[s.id];
+      const isBusy = lock && lock.clientId !== clientId;
 
       let sigCellHtml = '';
       if (s.signed && s.signatureUrl) {
-        const rep =
-          s.representedBy && s.representedBy.name
-            ? `<div class="paper-sig-rep">a.n. ${esc(s.representedBy.name)}</div>`
-            : '';
         sigCellHtml = `
-          <td class="paper-sig-cell" data-doc-action="detail" data-id="${esc(s.id)}" title="Klik untuk detail &amp; unduh bukti individual">
+          <td class="paper-sig-cell" data-doc-action="detail" data-id="${esc(s.id)}" title="Klik untuk melihat bukti">
             <img class="paper-sig-img" src="${esc(s.signatureUrl)}" alt="TTD ${esc(s.name)}" loading="lazy" />
-            ${rep}
           </td>
         `;
       } else if (isBusy) {
         sigCellHtml = `
           <td class="paper-sig-cell cell-busy" data-doc-action="sign" data-id="${esc(s.id)}">
-            <span style="font-size:11px;color:#B45309;font-weight:600">Sedang diisi...</span>
+            <span style="font-size:11px;color:#B45309;font-weight:500">Sedang diisi...</span>
           </td>
         `;
       } else {
         sigCellHtml = `
           <td class="paper-sig-cell" data-doc-action="sign" data-id="${esc(s.id)}" title="Klik untuk menandatangani">
-            <span class="paper-dots">…………………………</span>
             ${locked ? '' : '<span class="paper-click-hint">Klik untuk TTD</span>'}
           </td>
         `;
@@ -116,18 +152,19 @@ export function renderOfficialDocument({ container, documentMeta, signatories, l
 
   const page2Html = `
     <article class="paper-sheet">
-      <p class="paper-table-heading">PIHAK-PIHAK YANG MENYEPAKATI :</p>
+      <p class="paper-table-heading">${esc(documentMeta.lampiranHeading || 'LAMPIRAN I')}</p>
+      <p class="paper-p" style="margin-bottom:14px">${esc(documentMeta.lampiranSubheading || '')}</p>
       <table class="paper-table">
         <thead>
           <tr>
-            <th>No</th>
-            <th>Nama</th>
-            <th>Jabatan/Instansi</th>
-            <th>Tanda tangan</th>
+            <th>NO</th>
+            <th>NAMA</th>
+            <th>LEMBAGA/INSTANSI/JABATAN</th>
+            <th>TANDA TANGAN</th>
           </tr>
         </thead>
         <tbody>
-          ${rowsHtml}
+          ${lampiranRowsHtml}
         </tbody>
       </table>
     </article>

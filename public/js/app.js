@@ -871,7 +871,7 @@ function bindEvents() {
       errEl.classList.remove('hidden');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Masuk Ruang Penandatanganan';
+      btn.textContent = 'Masuk';
     }
   });
 

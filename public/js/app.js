@@ -401,11 +401,25 @@ function renderChrome() {
 
   if (state.documentMeta) {
     const m = state.documentMeta;
-    const titleStr = (m.titleLines || []).join(' ').trim();
-    if (titleStr) $('mastheadTitle').textContent = titleStr;
+    const rawTitle = (m.titleLines || []).join(' ').trim();
+    if (rawTitle) {
+      // Convert ALL-CAPS document header into clean readable Title Case for the web masthead
+      const titleFormatted = rawTitle
+        .toLowerCase()
+        .replace(/\b\w/g, (ch) => ch.toUpperCase())
+        .replace(/\bSdi\b/g, 'SDI');
+      $('mastheadTitle').textContent = titleFormatted;
+    }
     const dateRow = (m.eventDetails || []).find((r) => /tanggal/i.test(r.label));
     const timeRow = (m.eventDetails || []).find((r) => /waktu/i.test(r.label));
-    const subParts = [dateRow?.value, timeRow?.value, m.documentNumber?.trim()].filter(Boolean);
+    const docNum = (m.documentNumber || '').trim();
+    // Only display Nomor in the web subtitle if the number blanks have actually been filled
+    const hasFilledNum = docNum && !/:\s*\/|\/\s+\//.test(docNum);
+    const subParts = [
+      dateRow?.value,
+      timeRow?.value,
+      hasFilledNum ? docNum : 'Ruang Rapat RKPD Bapperida',
+    ].filter(Boolean);
     if (subParts.length) $('mastheadSubtitle').textContent = subParts.join(' · ');
   }
 }

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
   <link rel="stylesheet" href="/css/styles.css" />
@@ -113,19 +113,32 @@
       <div class="editorial-sheet">
         <!-- Document Masthead -->
         <section class="doc-masthead no-print">
-          <div class="masthead-top">
-            <div>
-              <p class="masthead-kicker">Pemerintah Kabupaten Berau</p>
-              <h1 class="page-title" id="mastheadTitle">Berita Acara Hasil Kesepakatan Forum Satu Data Kabupaten Berau 2026</h1>
-              <p class="page-subtitle" id="mastheadSubtitle">Rabu, 25 November 2026 · Pukul 08.00 – 12.00 WITA</p>
+          <div class="masthead-main">
+            <div class="masthead-info">
+              <div class="masthead-kicker-row">
+                <span class="masthead-kicker">Pemerintah Kabupaten Berau</span>
+                <span class="kicker-dot">·</span>
+                <span class="masthead-kicker">Forum Satu Data 2026</span>
+              </div>
+              <h1 class="page-title" id="mastheadTitle">Berita Acara Hasil Kesepakatan Forum Satu Data Kabupaten Berau</h1>
+              <p class="page-subtitle" id="mastheadSubtitle">Rabu, 25 November 2026 · Pukul 08.00 – 12.00 WITA · Ruang Rapat RKPD Bapperida</p>
             </div>
-            <div class="masthead-progress-text">
-              <div class="progress-fraction mono"><strong id="statSignedCount">0</strong><span>/</span><span id="statTotalCount">50</span></div>
-              <div class="progress-caption">menandatangani (<span id="statPct">0%</span>)</div>
+
+            <div class="masthead-stat-box">
+              <div class="stat-top-row">
+                <span class="stat-label">Progres TTD</span>
+                <span class="stat-pct mono" id="statPct">0%</span>
+              </div>
+              <div class="stat-count-row mono">
+                <strong id="statSignedCount">0</strong>
+                <span class="stat-slash">/</span>
+                <span id="statTotalCount">50</span>
+                <span class="stat-unit">pejabat</span>
+              </div>
+              <div class="compact-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBarTrack">
+                <div class="compact-progress-bar" id="progressBarFill" style="width: 0%"></div>
+              </div>
             </div>
-          </div>
-          <div class="thin-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBarTrack">
-            <div class="thin-progress-bar" id="progressBarFill" style="width: 0%"></div>
           </div>
         </section>
 

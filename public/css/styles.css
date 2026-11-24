@@ -1,22 +1,21 @@
 :root {
-  --canvas: #f6f5f1;
+  --canvas: #f4f6f8;
   --surface: #ffffff;
-  --subtle: #faf9f6;
-  --hover: #f3f2ed;
-  --ink: #14263d;
-  --ink-hover: #1d3554;
-  --text: #1c1f24;
-  --text-2: #4b525c;
-  --muted: #767b84;
-  --border: #e6e4dd;
-  --border-strong: #d3d0c7;
-  --sage: #156f4b;
-  --amber: #a85507;
+  --subtle: #f8fafc;
+  --hover: #f1f5f9;
+  --ink: #0f172a;
+  --ink-hover: #1e293b;
+  --text: #0f172a;
+  --text-2: #475569;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --sage: #0d7a52;
+  --amber: #b45309;
   --danger: #b42318;
   --danger-bg: #fef3f2;
-  --radius: 7px;
-  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --radius: 8px;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -96,8 +95,8 @@ html, body {
   text-transform: uppercase; color: var(--muted);
 }
 .gate-title {
-  margin: 6px 0 10px; font-family: var(--font-serif); font-size: 22px;
-  font-weight: 700; line-height: 1.25; color: var(--ink);
+  margin: 6px 0 10px; font-family: var(--font-sans); font-size: 20px;
+  font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; color: var(--ink);
 }
 .gate-meta {
   margin: 0 0 22px; font-size: 13px; color: var(--muted); line-height: 1.55;
@@ -108,16 +107,16 @@ html, body {
 /* ===== MINIMAL TYPOGRAPHIC HEADER ===== */
 .topbar {
   position: sticky; top: 0; z-index: 60;
-  background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
 .topbar-inner {
-  max-width: 1020px; margin: 0 auto; padding: 0 24px; height: 56px;
+  max-width: 980px; margin: 0 auto; padding: 0 20px; height: 56px;
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
 }
 .topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .site-wordmark {
-  font-size: 15px; font-weight: 600; letter-spacing: -0.015em;
+  font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
   color: var(--ink); white-space: nowrap;
 }
 
@@ -145,38 +144,64 @@ html, body {
 .dropdown-item small { display: block; font-size: 11.5px; color: var(--muted); }
 .dropdown-sep { height: 1px; background: var(--border); margin: 5px 4px; }
 
-/* ===== MAIN ARCHIVAL EDITORIAL SHEET ===== */
-.page-wrap { max-width: 1020px; margin: 0 auto; padding: 24px 20px 68px; }
+/* ===== MAIN EDITORIAL SHEET ===== */
+.page-wrap { max-width: 980px; margin: 0 auto; padding: 20px 20px 68px; }
 
 .editorial-sheet {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 28px 32px 32px;
-  box-shadow: 0 1px 2px rgba(20, 38, 61, 0.03), 0 8px 26px rgba(20, 38, 61, 0.03);
+  border-radius: 12px;
+  padding: 26px 28px 30px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 /* Masthead */
-.doc-masthead { margin-bottom: 20px; }
-.masthead-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.doc-masthead { margin-bottom: 18px; }
+.masthead-main {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+}
+.masthead-info { min-width: 0; flex: 1; }
+.masthead-kicker-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+}
 .masthead-kicker {
-  margin: 0 0 4px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em;
   text-transform: uppercase; color: var(--muted);
 }
+.kicker-dot { color: var(--border-strong); font-size: 11px; }
 .page-title {
-  margin: 0; font-family: var(--font-serif); font-size: 23px; font-weight: 700;
-  letter-spacing: -0.015em; line-height: 1.25; color: var(--ink);
+  margin: 0; font-family: var(--font-sans); font-size: 20px; font-weight: 700;
+  letter-spacing: -0.02em; line-height: 1.3; color: var(--ink);
 }
-.page-subtitle { margin: 5px 0 0; font-size: 13px; color: var(--muted); }
+.page-subtitle { margin: 5px 0 0; font-size: 13px; color: var(--text-2); }
 
-.masthead-progress-text { text-align: right; flex-shrink: 0; }
-.progress-fraction { font-size: 20px; color: var(--muted); line-height: 1.1; }
-.progress-fraction strong { color: var(--ink); font-weight: 600; }
-.progress-fraction span { margin: 0 2px; }
-.progress-caption { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.masthead-stat-box {
+  background: var(--subtle);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 11px 15px;
+  min-width: 170px;
+  flex-shrink: 0;
+}
+.stat-top-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 3px;
+}
+.stat-label { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.stat-pct { font-size: 11.5px; font-weight: 600; color: var(--ink); }
+.stat-count-row {
+  display: flex; align-items: baseline; gap: 3px; font-size: 18px; color: var(--muted);
+}
+.stat-count-row strong { font-size: 20px; font-weight: 600; color: var(--ink); }
+.stat-slash { font-size: 14px; color: var(--border-strong); }
+.stat-unit { font-family: var(--font-sans); font-size: 12px; color: var(--muted); margin-left: 3px; }
 
-.thin-progress { height: 3px; background: #eceae3; border-radius: 99px; margin-top: 16px; overflow: hidden; }
-.thin-progress-bar { height: 100%; background: var(--ink); border-radius: 99px; transition: width 320ms ease; }
+.compact-progress {
+  height: 4px; background: var(--border); border-radius: 99px; margin-top: 8px; overflow: hidden;
+}
+.compact-progress-bar {
+  height: 100%; background: var(--ink); border-radius: 99px; transition: width 320ms ease;
+}
 
 /* ===== PRIMARY VIEW TABS (UNDERLINE STYLE — CLEARLY DISTINCT FROM FILTERS) ===== */
 .primary-tabs {
@@ -582,9 +607,9 @@ textarea.input-control { resize: vertical; line-height: 1.5; font-size: 13.5px; 
   .topbar-inner { padding: 0 14px; }
   .page-wrap { padding: 14px 10px 56px; }
   .editorial-sheet { padding: 20px 16px 24px; }
-  .page-title { font-size: 19px; }
-  .masthead-top { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .masthead-progress-text { text-align: left; }
+  .page-title { font-size: 18px; }
+  .masthead-main { flex-direction: column; align-items: stretch; gap: 14px; }
+  .masthead-stat-box { width: 100%; }
   .filter-bar { flex-direction: column; align-items: stretch; }
   .filter-selects { width: 100%; }
   .select-control { flex: 1; }

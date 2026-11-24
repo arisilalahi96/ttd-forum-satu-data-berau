@@ -440,6 +440,7 @@ html, body {
 
 .paper-kv-table { width: 100%; border-collapse: collapse; margin: 4px 0 8px; font-size: 14px; }
 .paper-kv-table td { vertical-align: top; padding: 3px 4px; }
+.paper-kv-table td:first-child { padding-left: 0; }
 .paper-kv-table .kv-lbl { width: 140px; white-space: nowrap; }
 .paper-kv-table .kv-lbl-sm { width: 82px; }
 .paper-kv-table .kv-colon { width: 14px; text-align: center; }

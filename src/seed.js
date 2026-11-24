@@ -1,53 +1,53 @@
 'use strict';
 
 const DOCUMENT_META = {
-  id: 'ba-fsd-berau-2026-v2',
+  id: 'ba-fsd-berau-2026-rev',
   titleLines: [
     'BERITA ACARA HASIL KESEPAKATAN',
     'FORUM SATU DATA KABUPATEN BERAU',
     'TAHUN 2026',
   ],
-  documentNumber: 'Nomor :             /       /Bapp-II/2026',
+  documentNumber: 'Nomor :             /            /BAP-PEPD/XI/2026',
   openingParagraph:
-    'Pada hari ini Rabu, tanggal Dua Puluh Lima, bulan November, Tahun Dua Ribu Dua Puluh Enam, di Ruang Rapat RKPD Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau dan secara online melalui Zoom Meeting, telah dilaksanakan Forum Satu Data Kabupaten Berau yang dihadiri oleh para pemangku kepentingan, sebagaimana tercantum pada daftar peserta pada Lampiran I Berita Acara ini:',
+    'Pada hari ini Rabu, tanggal Dua Puluh Lima, bulan November, Tahun Dua Ribu Dua Puluh Enam, bertempat di Ruang Rapat RKPD Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau dan secara online melalui Zoom Meeting, telah dilaksanakan Forum Satu Data Kabupaten Berau yang dihadiri oleh para pemangku kepentingan, sebagaimana tercantum pada daftar peserta pada Lampiran I Berita Acara ini:',
   considerationsHeading: 'Setelah mendengar, memperhatikan, dan mempertimbangkan:',
   considerations: [
     'Arahan Bupati Berau yang diwakili oleh Kepala Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau, Ibu Ir. Endah Ernany Triariani, M.Si.;',
     'Penyampaian materi Koordinator Satu Data Kabupaten Berau oleh Kepala Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau, Ibu Ir. Endah Ernany Triariani, M.Si. dengan tema “…………………”;',
     'Penyampaian materi Kepala Badan Pusat Statistik Kabupaten Berau oleh Bapak Yudi Wahyudin, S.ST., M.Si. dengan tema “Sigap Berau”;',
-    'Penyampaian materi Kepala Dinas Komunikasi dan Informatika Kabupaten Berau oleh Bapak Saleh, SE dengan tema “……………….”;',
+    'Penyampaian materi Kepala Dinas Komunikasi dan Informatika Kabupaten Berau oleh Bapak Muhammad Saleh, SE dengan tema “Peningkatan Kualitas Data dan Tingkat Keterisian Data dalam Portal Satu Data Berau”;',
     'Penyampaian materi Pembina Statistik Sektoral oleh Ibu Lita Januarti Hakim, S.ST., M.Si. dengan tema “Penguatan Aliran Data Statistik Sektoral dari Produsen Data hingga Pemanfaatannya”;',
-    'Hasil pemilahan, verifikasi dan persetujuan data daerah tahun 2026 oleh perangkat daerah:',
+    'Hasil pemilahan, verifikasi, dan persetujuan data daerah Tahun 2026 oleh Perangkat Daerah:',
   ],
   eventLead: 'Maka pada:',
   eventDetails: [
     { label: 'Hari dan tanggal', value: 'Rabu, 25 November 2026' },
-    { label: 'Waktu', value: 'Pukul 08.00 – 12.00 WITA' },
+    { label: 'Waktu', value: '08.00 – 12.00 WITA' },
     {
       label: 'Tempat',
       value:
         'Ruang Rapat RKPD Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah Kabupaten Berau dan melalui Zoom Meeting',
     },
   ],
-  agreementLead: 'Seluruh peserta Forum Satu Data Tahun 2026',
+  agreementLead: 'Seluruh Peserta Forum Satu Data Kabupaten Berau Tahun 2026',
   agreementHeading: 'MENYEPAKATI',
   agreements: [
     {
       label: 'Kesatu',
-      value: 'Penyepakatan daftar data tahun 2026 sebagaimana tercantum pada Lampiran II berita acara ini;',
+      value: 'Penyepakatan Daftar Data Tahun 2026 sebagaimana tercantum pada Lampiran II Berita Acara ini;',
     },
     {
       label: 'Kedua',
       value:
-        'Rencana Aksi Satu Data Kabupaten Berau Tahun 2027-2029 sebagaimana tercantum dalam Lampiran III berita acara ini;',
+        'Rencana Aksi Satu Data Kabupaten Berau Tahun 2027–2029 sebagaimana tercantum dalam Lampiran III Berita Acara ini;',
     },
   ],
   closingParagraph:
-    'Demikian berita acara kesepakatan ini dibuat dan disahkan untuk digunakan sebagaimana mestinya.',
-  representativesHeading: 'Mewakili unsur peserta Forum Satu Data Tahun 2026',
+    'Demikian Berita Acara Hasil Kesepakatan ini dibuat dan disahkan untuk digunakan sebagaimana mestinya.',
+  representativesHeading: 'Mewakili Unsur Peserta Forum Satu Data Kabupaten Berau Tahun 2026',
   lampiranHeading: 'LAMPIRAN I',
   lampiranSubheading:
-    'Pihak di bawah ini telah hadir dan menyepakati Hasil Forum Satu Data Tahun 2026',
+    'Pihak di bawah ini telah hadir dan menyepakati Hasil Forum Satu Data Kabupaten Berau Tahun 2026',
 };
 
 const RAW_REPRESENTATIVES = [
@@ -104,30 +104,29 @@ const RAW_LAMPIRAN_SIGNATORIES = [
   [20, 'Rusnan Hefni, M.T', 'Kepala Dinas Perhubungan'],
   [21, 'Abdul Madjid, S.Pi., M.Si', 'Kepala Dinas Perikanan'],
   [22, 'Hj. Eva Yunita, SE., MM', 'Kepala Dinas Koperasi, Perindustrian dan Perdagangan'],
-  [23, 'Ir. Lita Handini', 'Kepala Dinas Tanaman Pangan, Hortikultura dan Peternakan'],
-  [24, 'H. Zulkifli Azhari, SH., M.A.P', 'Kepala Dinas Sosial'],
+  [23, 'Ir. Hj. Lita Handini', 'Kepala Dinas Tanaman Pangan, Hortikultura dan Peternakan'],
+  [24, 'H. Zulkifli Azhari, SH., M.A.P', 'Plt. Kepala Dinas Sosial'],
   [25, 'H. Anang Saprani, SH., M.Si', 'Kepala Dinas Tenaga Kerja dan Transmigrasi'],
   [26, 'David Pamuji, S.STP., M.Si', 'Kepala Dinas Kependudukan dan Pencatatan Sipil'],
-  [27, 'Dr. Ir. H. Andi Marewangeng, S.T., M.T', 'Kepala Dinas Kepemudaan dan Olahraga'],
+  [27, 'Dr. Ir. H. Andi Marewangeng, S.T., M.T', 'Plt. Kepala Dinas Kepemudaan dan Olahraga'],
   [28, 'Tri Anggoro Raharjo, S.Si., M.Si', 'Kepala Dinas Perkebunan'],
   [29, 'H. Mulyadi, SE., M.Si', 'Kepala Dinas Perumahan dan Kawasan Permukiman'],
-  [30, 'Drs. Yudha Budisantosa, M.Si', 'Kepala Dinas Perpustakaan dan Kearsipan'],
+  [30, 'Drs. Yudha Budisantosa, M.Si', 'Plt. Kepala Dinas Perpustakaan dan Kearsipan'],
   [31, 'Sulaiman, SH', 'Kepala Dinas Pertanahan'],
   [32, 'H. Rakhmadi Pasarakan, S.Hut., M.Sc', 'Kepala Dinas Pemadam Kebakaran dan Penyelamatan'],
-  [33, 'dr. Jusram, Sp.PD., FINASIM', 'Direktur RSUD dr. Abdul Rivai'],
-  [34, 'Ahmad Juhri, S.ST., MP.SSp', 'Camat Tanjung Redeb'],
-  [35, 'Lutfi Hidayat, SE', 'Camat Gunung Tabur'],
-  [36, 'Nur Alam, S.STP', 'Camat Sambaliung'],
-  [37, 'Edi Baskoro, S.STP', 'Camat Teluk Bayur'],
-  [38, 'Toris, SH', 'Camat Segah'],
-  [39, 'H. Muh. Saleh, S.P., M.A.P.', 'Camat Kelay'],
-  [40, 'Ashari, SE', 'Camat Maratua'],
-  [41, 'Ariyanto, SE', 'Camat Pulau Derawan'],
-  [42, 'Wahyudi, S.STP., M.E', 'Camat Tabalar'],
-  [43, 'Rusdiansyah, SE', 'Camat Biatan'],
-  [44, 'Mutmainnah, SE', 'Camat Talisayan'],
-  [45, 'Firmansyah, SE', 'Camat Batu Putih'],
-  [46, 'Cipto Supratmono, SE', 'Camat Biduk-Biduk'],
+  [33, 'Ahmad Juhri, S.ST., MP.SSp', 'Camat Tanjung Redeb'],
+  [34, 'Lutfi Hidayat, SE', 'Camat Gunung Tabur'],
+  [35, 'Nur Alam, S.STP', 'Camat Sambaliung'],
+  [36, 'Edi Baskoro, S.STP', 'Camat Teluk Bayur'],
+  [37, 'Toris, SH', 'Camat Segah'],
+  [38, 'H. Muh. Saleh, S.P., M.A.P.', 'Camat Kelay'],
+  [39, 'Ashari, SE', 'Camat Maratua'],
+  [40, 'Ariyanto, SE', 'Camat Pulau Derawan'],
+  [41, 'Wahyudi, S.STP., M.E', 'Camat Tabalar'],
+  [42, 'Rusdiansyah, SE', 'Camat Biatan'],
+  [43, 'Mutmainnah, SE', 'Camat Talisayan'],
+  [44, 'Firmansyah, SE', 'Camat Batu Putih'],
+  [45, 'Cipto Supratmono, SE', 'Camat Biduk-Biduk'],
 ];
 
 function classifyInstansiGroup(role, isRepresentative = false, isCustom = false) {
@@ -135,7 +134,7 @@ function classifyInstansiGroup(role, isRepresentative = false, isCustom = false)
   if (isCustom) return 'Peserta Tambahan';
   const r = String(role || '').toLowerCase();
   if (r.includes('camat')) return 'Kecamatan (Camat)';
-  if (r.includes('dinas') || r.includes('rsud') || r.includes('direktur')) return 'Dinas & RSUD';
+  if (r.includes('dinas') || r.includes('rsud') || r.includes('direktur')) return 'Dinas';
   if (
     r.includes('badan') ||
     r.includes('bps') ||

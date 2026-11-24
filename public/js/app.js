@@ -14,7 +14,7 @@ const STORAGE_KEYS = {
 const state = {
   documentMeta: null,
   settings: { locked: false, allowSelfAdd: false, requireMeetingCode: true },
-  stats: { total: 50, signed: 0, percentage: 0 },
+  stats: { total: 49, signed: 0, percentage: 0 },
   signatories: [],
   auditLogs: [],
   isAdmin: false,
@@ -391,12 +391,17 @@ function renderChrome() {
     }
     const dateRow = (m.eventDetails || []).find((r) => /tanggal/i.test(r.label));
     const timeRow = (m.eventDetails || []).find((r) => /waktu/i.test(r.label));
+    const timeFormatted = timeRow?.value
+      ? /^pukul\b/i.test(timeRow.value.trim())
+        ? timeRow.value.trim()
+        : `Pukul ${timeRow.value.trim()}`
+      : '';
     const docNum = (m.documentNumber || '').trim();
     // Only display Nomor in the web subtitle if the number blanks have actually been filled
     const hasFilledNum = docNum && !/:\s*\/|\/\s+\//.test(docNum);
     const subParts = [
       dateRow?.value,
-      timeRow?.value,
+      timeFormatted,
       hasFilledNum ? docNum : 'Ruang Rapat RKPD Bapperida',
     ].filter(Boolean);
     if (subParts.length) $('mastheadSubtitle').textContent = subParts.join(' · ');
@@ -433,7 +438,7 @@ function renderInstansiFilterOptions() {
   const order = [
     'Perwakilan Unsur',
     'Badan, Inspektorat & Satpol PP',
-    'Dinas & RSUD',
+    'Dinas',
     'Kecamatan (Camat)',
     'Peserta Tambahan',
     'Lainnya',
@@ -986,7 +991,7 @@ function bindEvents() {
   });
 
   $('resetAllDataBtn').addEventListener('click', async () => {
-    if (!window.confirm('Yakin hapus SEMUA tanda tangan & peserta tambahan (kembali ke 0 / 50)?')) return;
+    if (!window.confirm('Yakin hapus SEMUA tanda tangan & peserta tambahan (kembali ke 0 / 49)?')) return;
     try {
       await apiFetch('/api/admin/reset-all', { method: 'POST' });
       $('settingsModal').classList.add('hidden');

@@ -42,7 +42,7 @@ function fitPx(w, h, maxW, maxH) {
   };
 }
 
-const FOREIGN_TERMS_RE = /(\b(?:online|Zoom Meeting)\b)/g;
+const FOREIGN_TERMS_RE = /(\b(?:online|Zoom Meeting)\b)/gi;
 
 function makeTextRun(text, opts = {}) {
   return new TextRun({
@@ -67,7 +67,7 @@ function makeRichTextRuns(text, opts = {}) {
   return parts
     .filter((p) => p.length > 0)
     .map((part) => {
-      const isForeign = /^(?:online|Zoom Meeting)$/.test(part);
+      const isForeign = /^(?:online|Zoom Meeting)$/i.test(part);
       return makeTextRun(part, {
         ...opts,
         italics: Boolean(opts.italics) || isForeign,
@@ -94,7 +94,7 @@ function buildKeyValueTable(rows, labelPct = 24) {
             new TableCell({
               width: { size: labelPct, type: WidthType.PERCENTAGE },
               borders: NO_BORDER,
-              margins: { top: 40, bottom: 40, left: 60, right: 60 },
+              margins: { top: 40, bottom: 40, left: 0, right: 60 },
               children: [new Paragraph({ children: [makeTextRun(r.label)] })],
             }),
             new TableCell({
@@ -301,7 +301,7 @@ async function generateBeritaAcaraDocx(store) {
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         spacing: { before: 160, after: 180, line: 276 },
-        children: [makeTextRun(meta.closingParagraph)],
+        children: makeRichTextRuns(meta.closingParagraph),
       })
     );
   }

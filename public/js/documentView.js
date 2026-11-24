@@ -7,7 +7,7 @@ function esc(str) {
 }
 
 function escWithItalics(str) {
-  return esc(str).replace(/\b(online|Zoom Meeting)\b/g, '<em>$1</em>');
+  return esc(str).replace(/\b(online|Zoom Meeting)\b/gi, '<em>$1</em>');
 }
 
 function editableAttrs(field, singleLine = false) {
@@ -48,7 +48,7 @@ export function renderOfficialDocument({
   // ===== DOCUMENT NUMBER =====
   const docNumHtml = editMode
     ? `<p class="paper-doc-num"><span ${editableAttrs('documentNumber', true)}>${esc(
-        documentMeta.documentNumber || 'Nomor :             /       /Bapp-II/2026'
+        documentMeta.documentNumber || 'Nomor :             /            /BAP-PEPD/XI/2026'
       )}</span></p>`
     : documentMeta.documentNumber
       ? `<p class="paper-doc-num">${esc(documentMeta.documentNumber)}</p>`
@@ -199,7 +199,7 @@ export function renderOfficialDocument({
         ${
           editMode
             ? `<span ${editableAttrs('closingParagraph')}>${esc(documentMeta.closingParagraph)}</span>`
-            : esc(documentMeta.closingParagraph)
+            : escWithItalics(documentMeta.closingParagraph)
         }
       </p>
 
@@ -208,7 +208,7 @@ export function renderOfficialDocument({
           ${
             editMode
               ? `<span ${editableAttrs('representativesHeading', true)}>${esc(documentMeta.representativesHeading)}</span>`
-              : esc(documentMeta.representativesHeading || 'Mewakili unsur peserta Forum Satu Data Tahun 2026')
+              : esc(documentMeta.representativesHeading || 'Mewakili Unsur Peserta Forum Satu Data Kabupaten Berau Tahun 2026')
           }
         </p>
         <div class="rep-grid-2x2">${repsGridHtml}</div>

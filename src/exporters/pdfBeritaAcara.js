@@ -8,6 +8,49 @@ const A4_WIDTH = 595.28;
 const A4_HEIGHT = 841.89;
 const MARGIN = 62;
 
+const FOREIGN_TERMS_RE = /(\b(?:online|Zoom Meeting)\b)/gi;
+
+function splitForeignRuns(text) {
+  const str = String(text ?? '');
+  FOREIGN_TERMS_RE.lastIndex = 0;
+  if (!FOREIGN_TERMS_RE.test(str)) {
+    return [{ text: str, italic: false }];
+  }
+  FOREIGN_TERMS_RE.lastIndex = 0;
+  return str
+    .split(FOREIGN_TERMS_RE)
+    .filter((p) => p.length > 0)
+    .map((part) => ({
+      text: part,
+      italic: /^(?:online|Zoom Meeting)$/i.test(part),
+    }));
+}
+
+function drawRichText(doc, text, x, y, opts = {}) {
+  const runs = splitForeignRuns(text);
+  const textOpts = {
+    width: opts.width,
+    align: opts.align || 'justify',
+    lineGap: opts.lineGap ?? 2.5,
+  };
+  if (runs.length === 1) {
+    doc.font(runs[0].italic ? 'Helvetica-Oblique' : 'Helvetica');
+    doc.text(runs[0].text, x, y, textOpts);
+    return;
+  }
+  runs.forEach((run, idx) => {
+    const isFirst = idx === 0;
+    const isLast = idx === runs.length - 1;
+    doc.font(run.italic ? 'Helvetica-Oblique' : 'Helvetica');
+    if (isFirst) {
+      doc.text(run.text, x, y, { ...textOpts, continued: !isLast });
+    } else {
+      doc.text(run.text, { ...textOpts, continued: !isLast });
+    }
+  });
+  doc.font('Helvetica');
+}
+
 function fitBox(imgW, imgH, maxW, maxH) {
   const sw = Math.max(1, imgW || 320);
   const sh = Math.max(1, imgH || 120);
@@ -63,21 +106,21 @@ function generateBeritaAcaraPdf(store) {
 
     // Opening
     if (meta.openingParagraph) {
-      doc.text(meta.openingParagraph, MARGIN, doc.y, { width: cw, align: 'justify', lineGap: 2.8 });
+      drawRichText(doc, meta.openingParagraph, MARGIN, doc.y, { width: cw, align: 'justify', lineGap: 2.8 });
       doc.moveDown(0.55);
     }
 
     // Considerations
     if (meta.considerationsHeading) {
-      doc.text(meta.considerationsHeading, MARGIN, doc.y, { width: cw, align: 'justify', lineGap: 2.5 });
+      doc.font('Helvetica').text(meta.considerationsHeading, MARGIN, doc.y, { width: cw, align: 'justify', lineGap: 2.5 });
       doc.moveDown(0.3);
     }
     (meta.considerations || []).forEach((pt, idx) => {
       const h = doc.heightOfString(pt, { width: cw - 24, lineGap: 2.3 });
       ensureSpace(h + 8);
       const y = doc.y;
-      doc.text(`${idx + 1}.`, MARGIN + 6, y, { width: 18 });
-      doc.text(pt, MARGIN + 24, y, { width: cw - 24, align: 'justify', lineGap: 2.3 });
+      doc.font('Helvetica').text(`${idx + 1}.`, MARGIN, y, { width: 18 });
+      drawRichText(doc, pt, MARGIN + 20, y, { width: cw - 20, align: 'justify', lineGap: 2.3 });
       doc.moveDown(0.32);
     });
 
@@ -85,18 +128,18 @@ function generateBeritaAcaraPdf(store) {
     if (meta.eventLead) {
       ensureSpace(24);
       doc.moveDown(0.25);
-      doc.text(meta.eventLead, MARGIN, doc.y, { width: cw });
+      doc.font('Helvetica').text(meta.eventLead, MARGIN, doc.y, { width: cw });
       doc.moveDown(0.25);
     }
     (meta.eventDetails || []).forEach((row) => {
-      const labelW = 105;
+      const labelW = 100;
       const valW = cw - labelW - 14;
       const h = Math.max(14, doc.heightOfString(row.value || '', { width: valW, lineGap: 2 }));
       ensureSpace(h + 6);
       const y = doc.y;
-      doc.text(row.label || '', MARGIN + 8, y, { width: labelW - 8 });
+      doc.font('Helvetica').text(row.label || '', MARGIN, y, { width: labelW });
       doc.text(':', MARGIN + labelW, y, { width: 12, align: 'center' });
-      doc.text(row.value || '', MARGIN + labelW + 14, y, { width: valW, align: 'justify', lineGap: 2 });
+      drawRichText(doc, row.value || '', MARGIN + labelW + 14, y, { width: valW, align: 'justify', lineGap: 2 });
       doc.y = y + h + 4;
     });
 
@@ -104,7 +147,7 @@ function generateBeritaAcaraPdf(store) {
     if (meta.agreementLead) {
       ensureSpace(40);
       doc.moveDown(0.5);
-      doc.text(meta.agreementLead, MARGIN, doc.y, { width: cw });
+      doc.font('Helvetica').text(meta.agreementLead, MARGIN, doc.y, { width: cw });
     }
     if (meta.agreementHeading) {
       doc.moveDown(0.35);
@@ -116,14 +159,14 @@ function generateBeritaAcaraPdf(store) {
     }
     doc.font('Helvetica').fontSize(10.2);
     (meta.agreements || []).forEach((row) => {
-      const labelW = 68;
+      const labelW = 62;
       const valW = cw - labelW - 14;
       const h = Math.max(14, doc.heightOfString(row.value || '', { width: valW, lineGap: 2.2 }));
       ensureSpace(h + 8);
       const y = doc.y;
-      doc.text(row.label || '', MARGIN + 6, y, { width: labelW - 6 });
+      doc.font('Helvetica').text(row.label || '', MARGIN, y, { width: labelW });
       doc.text(':', MARGIN + labelW, y, { width: 12, align: 'center' });
-      doc.text(row.value || '', MARGIN + labelW + 14, y, { width: valW, align: 'justify', lineGap: 2.2 });
+      drawRichText(doc, row.value || '', MARGIN + labelW + 14, y, { width: valW, align: 'justify', lineGap: 2.2 });
       doc.y = y + h + 5;
     });
 
@@ -131,7 +174,7 @@ function generateBeritaAcaraPdf(store) {
     if (meta.closingParagraph) {
       ensureSpace(40);
       doc.moveDown(0.5);
-      doc.text(meta.closingParagraph, MARGIN, doc.y, { width: cw, align: 'justify', lineGap: 2.6 });
+      drawRichText(doc, meta.closingParagraph, MARGIN, doc.y, { width: cw, align: 'justify', lineGap: 2.6 });
     }
 
     // 4 Representatives 2x2 Signature Grid

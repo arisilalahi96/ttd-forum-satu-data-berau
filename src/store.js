@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const { cloneDefaultDocumentMeta, createInitialSignatories, classifyInstansiGroup } = require('./seed');
 const { normalizeCode } = require('./utils/formatters');
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, '..', 'data'));
 const SIGNATURES_DIR = path.join(DATA_DIR, 'signatures');
 const STATE_FILE = path.join(DATA_DIR, 'store.json');
@@ -23,26 +23,52 @@ class ForumStore {
 
   _upgradeSignatoriesAndMeta(parsed) {
     const freshSignatories = createInitialSignatories();
-    const freshById = new Map(freshSignatories.map((s) => [s.id, s]));
     const oldList = Array.isArray(parsed.signatories) ? parsed.signatories : [];
+    const oldById = new Map(oldList.map((s) => [s.id, s]));
+    const oldSignedByKey = new Map(
+      oldList
+        .filter((s) => s.signed && !s.isCustom)
+        .map((s) => [`${s.isRepresentative ? 'rep' : 'row'}:${String(s.name || '').toLowerCase().trim()}`, s])
+    );
 
-    const upgraded = oldList.map((oldSig) => {
-      const fresh = freshById.get(oldSig.id);
-      if (!fresh) return oldSig;
+    const migrated = freshSignatories.map((fresh) => {
+      const old =
+        oldById.get(fresh.id) &&
+        Boolean(oldById.get(fresh.id).isRepresentative) === Boolean(fresh.isRepresentative) &&
+        !String(oldById.get(fresh.id).role || '').includes('RSUD') &&
+        !String(oldById.get(fresh.id).role || '').includes('Camat') === !String(fresh.role || '').includes('Camat')
+          ? oldById.get(fresh.id)
+          : oldSignedByKey.get(`${fresh.isRepresentative ? 'rep' : 'row'}:${String(fresh.name || '').toLowerCase().trim()}`);
+
+      if (!old) return fresh;
       return {
-        ...oldSig,
-        name: fresh.name,
-        role: fresh.role,
-        roleLines: fresh.roleLines,
-        instansiGroup: fresh.instansiGroup,
+        ...fresh,
+        signed: Boolean(old.signed),
+        signatureMethod: old.signatureMethod || null,
+        signedAt: old.signedAt || null,
+        signatureWidth: old.signatureWidth || null,
+        signatureHeight: old.signatureHeight || null,
+        signatureVersion: old.signatureVersion || 0,
       };
     });
+
+    const maxRow = freshSignatories
+      .filter((s) => !s.isRepresentative)
+      .reduce((m, s) => Math.max(m, s.rowNumber), 45);
+    let nextCustomRow = maxRow + 1;
+    const customRows = oldList
+      .filter((s) => s.isCustom && s.signed)
+      .map((s) => ({
+        ...s,
+        rowNumber: nextCustomRow++,
+        instansiGroup: 'Peserta Tambahan',
+      }));
 
     return {
       ...parsed,
       version: SCHEMA_VERSION,
       documentMeta: cloneDefaultDocumentMeta(),
-      signatories: upgraded.length ? upgraded : freshSignatories,
+      signatories: [...migrated, ...customRows],
     };
   }
 
@@ -392,7 +418,7 @@ class ForumStore {
 
     const maxRow = this.state.signatories
       .filter((s) => !s.isRepresentative)
-      .reduce((max, s) => (s.rowNumber > max ? s.rowNumber : max), 46);
+      .reduce((max, s) => (s.rowNumber > max ? s.rowNumber : max), 45);
     const nextRow = maxRow + 1;
     const newId = `custom-${nextRow}-${crypto.randomBytes(2).toString('hex')}`;
 

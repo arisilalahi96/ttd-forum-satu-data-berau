@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: ttd-forum-satu-data-berau-2026
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MEETING_CODE
+        value: SDI2026
+      - key: ADMIN_PIN
+        value: "202600"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false

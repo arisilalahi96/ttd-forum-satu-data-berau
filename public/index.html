@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FFFFFF" />
+  <title>e-TTD Berita Acara — Forum Satu Data Kabupaten Berau 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <!-- ===== ACCESS GATE (KODE RAPAT) ===== -->
+  <section id="accessGate" class="gate-screen hidden" aria-label="Masuk Ruang Penandatanganan">
+    <div class="gate-box">
+      <p class="gate-kicker">e-TTD Berita Acara</p>
+      <h1 class="gate-title">Forum Satu Data Kabupaten Berau 2026</h1>
+      <p class="gate-meta">
+        <span id="gateEventDate">Rabu, 25 November 2026</span> · Ruang Rapat RKPD Bapperida
+        <br />
+        Progres saat ini: <strong class="mono" id="gateProgress">—</strong>
+      </p>
+
+      <form id="gateForm" autocomplete="off">
+        <div class="field-group">
+          <label for="gateCodeInput" class="field-label">Kode Rapat</label>
+          <input
+            id="gateCodeInput"
+            type="text"
+            class="input-control input-code"
+            placeholder="Masukkan Kode Rapat"
+            required
+            maxlength="24"
+            autofocus
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="gateDisplayName" class="field-label">Nama Anda <span class="muted">(opsional)</span></label>
+          <input
+            id="gateDisplayName"
+            type="text"
+            class="input-control"
+            placeholder="Nama lengkap"
+            maxlength="60"
+          />
+        </div>
+
+        <div id="gateError" class="msg-inline msg-error hidden" role="alert"></div>
+
+        <button type="submit" id="gateSubmitBtn" class="btn btn-primary btn-full btn-lg">
+          Masuk
+        </button>
+      </form>
+
+      <div class="gate-footer">
+        <button type="button" id="gateAdminLink" class="text-btn">Masuk sebagai Panitia (PIN)</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MAIN APPLICATION ===== -->
+  <div id="appShell" class="app-shell hidden">
+    <!-- Minimal Typographic Header (NO Logo Icon) -->
+    <header class="topbar no-print">
+      <div class="topbar-inner">
+        <div class="topbar-left">
+          <span class="site-wordmark">e-TTD Berita Acara</span>
+          <span id="adminBadge" class="inline-tag hidden">Panitia</span>
+          <span id="lockedBadge" class="inline-tag tag-danger hidden">Dikunci</span>
+
+          <nav class="nav-links" role="tablist" aria-label="Navigasi">
+            <button type="button" class="nav-link active" data-view="list" role="tab" aria-selected="true">
+              Daftar TTD
+            </button>
+            <button type="button" class="nav-link" data-view="document" role="tab" aria-selected="false">
+              Dokumen &amp; Unduh
+            </button>
+            <button type="button" id="adminSettingsTab" class="nav-link hidden" data-view="settings" role="tab" aria-selected="false">
+              Pengaturan
+            </button>
+          </nav>
+        </div>
+
+        <div class="topbar-right">
+          <span id="wsStatusPill" class="conn-status conn-connecting">
+            <span class="conn-dot"></span>
+            <span id="wsStatusText">Menyambungkan...</span>
+          </span>
+          <button type="button" id="qrBtn" class="btn btn-outline btn-sm">QR</button>
+          <button type="button" id="adminEnterBtn" class="btn btn-outline btn-sm">Panitia</button>
+          <button type="button" id="adminExitBtn" class="btn btn-outline btn-sm hidden">Keluar Panitia</button>
+        </div>
+      </div>
+
+      <!-- Mobile Tab Row -->
+      <div class="mobile-nav">
+        <button type="button" class="mobile-tab active" data-view="list">Daftar TTD</button>
+        <button type="button" class="mobile-tab" data-view="document">Dokumen &amp; Unduh</button>
+        <button type="button" id="adminSettingsMobileTab" class="mobile-tab hidden" data-view="settings">Pengaturan</button>
+      </div>
+    </header>
+
+    <main class="page-wrap">
+      <!-- Flat Editorial Document Masthead -->
+      <section class="doc-masthead no-print">
+        <div class="masthead-top">
+          <div>
+            <h1 class="page-title">Berita Acara Kesepakatan Forum Satu Data Kabupaten Berau 2026</h1>
+            <p class="page-subtitle">
+              Rabu, 25 November 2026 · Ruang Rapat RKPD Bapperida Kabupaten Berau
+            </p>
+          </div>
+          <div class="masthead-progress-text">
+            <span class="mono"><strong id="statSignedCount">0</strong> / <span id="statTotalCount">55</span></span>
+            <span class="muted">menandatangani (<span id="statPct">0%</span>)</span>
+          </div>
+        </div>
+
+        <div class="thin-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBarTrack">
+          <div class="thin-progress-bar" id="progressBarFill" style="width: 0%"></div>
+        </div>
+
+        <div class="masthead-actions">
+          <a id="quickDocxLink" class="action-link" href="#">Unduh Word (.docx)</a>
+          <span class="sep">·</span>
+          <a id="quickPdfLink" class="action-link" href="#">Unduh PDF (.pdf)</a>
+          <span class="sep">·</span>
+          <button type="button" id="readDocBtn" class="action-link">Baca Naskah</button>
+        </div>
+      </section>
+
+      <!-- ===== VIEW 1: DAFTAR PENANDATANGAN ===== -->
+      <section id="viewList" class="view-section">
+        <div class="list-toolbar no-print">
+          <div class="search-wrap">
+            <input
+              id="searchInput"
+              type="search"
+              class="search-input"
+              placeholder="Cari nama pejabat, jabatan, atau OPD..."
+              autocomplete="off"
+            />
+            <button type="button" id="clearSearchBtn" class="search-clear hidden" aria-label="Hapus">&times;</button>
+          </div>
+
+          <div class="toolbar-right">
+            <div class="seg-filter" role="group" aria-label="Filter status">
+              <button type="button" class="seg-btn active" data-status="all">Semua</button>
+              <button type="button" class="seg-btn" data-status="unsigned">Belum <span class="mono" id="countUnsigned">55</span></button>
+              <button type="button" class="seg-btn" data-status="signed">Sudah <span class="mono" id="countSigned">0</span></button>
+            </div>
+            <button type="button" id="addParticipantBtn" class="btn btn-outline btn-sm">+ Tambah Nama</button>
+          </div>
+        </div>
+
+        <div class="ledger">
+          <div class="ledger-head">
+            <div class="c-no">No</div>
+            <div class="c-person">Nama &amp; Jabatan / Instansi</div>
+            <div class="c-sig">Tanda Tangan</div>
+            <div class="c-act">Aksi</div>
+          </div>
+          <div id="signatoriesList" class="ledger-body" aria-live="polite"></div>
+          <div id="emptyState" class="empty-state hidden">
+            Tidak ditemukan nama yang sesuai. Klik <strong>+ Tambah Nama</strong> jika belum terdaftar.
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== VIEW 2: DOKUMEN RESMI & PUSAT UNDUH (TERBUKA UNTUK SEMUA) ===== -->
+      <section id="viewDocument" class="view-section hidden">
+        <div class="download-strip no-print">
+          <div class="download-grid">
+            <a id="dlFullDocx" class="dl-item dl-primary" href="#">
+              <span class="dl-format">DOCX</span>
+              <div>
+                <strong>Berita Acara Lengkap (Word)</strong>
+                <small>Format asli F4 terisi seluruh tanda tangan</small>
+              </div>
+            </a>
+            <a id="dlFullPdf" class="dl-item dl-primary" href="#">
+              <span class="dl-format">PDF</span>
+              <div>
+                <strong>Berita Acara Lengkap (PDF F4)</strong>
+                <small>Siap cetak ukuran 21,5 × 33 cm</small>
+              </div>
+            </a>
+            <a id="dlZipDocx" class="dl-item" href="#">
+              <span class="dl-format">ZIP</span>
+              <div>
+                <strong>Bukti Per Orang (Word)</strong>
+                <small>File .docx masing-masing peserta + PNG + CSV</small>
+              </div>
+            </a>
+            <a id="dlZipPdf" class="dl-item" href="#">
+              <span class="dl-format">ZIP</span>
+              <div>
+                <strong>Bukti Per Orang (PDF)</strong>
+                <small>File .pdf masing-masing peserta + PNG + CSV</small>
+              </div>
+            </a>
+          </div>
+
+          <div class="download-extra">
+            <a id="dlRekapCsv" class="btn btn-outline btn-sm" href="#">Unduh Rekap Excel (.csv)</a>
+            <button type="button" id="printDocBtn" class="btn btn-outline btn-sm">Cetak Dokumen</button>
+          </div>
+        </div>
+
+        <div class="paper-tray">
+          <p class="tray-hint no-print">Pratinjau langsung dokumen F4 — klik pada kolom tanda tangan untuk mengisi atau mengunduh bukti per orang.</p>
+          <div id="documentSheetContainer" class="document-stage"></div>
+        </div>
+      </section>
+
+      <!-- ===== VIEW 3 (PANITIA ONLY): PENGATURAN & LOG ===== -->
+      <section id="viewSettings" class="view-section hidden">
+        <div class="settings-layout">
+          <div class="settings-col">
+            <h2 class="sub-heading">Pengaturan Ruang Rapat</h2>
+            <p class="sub-desc">Perubahan diterapkan realtime untuk semua peserta.</p>
+
+            <div class="settings-form">
+              <div class="field-group">
+                <label for="adminMeetingCodeInput" class="field-label">Kode Rapat</label>
+                <input id="adminMeetingCodeInput" type="text" class="input-control input-code" maxlength="20" />
+              </div>
+
+              <label class="check-row">
+                <input type="checkbox" id="adminRequireCodeToggle" />
+                <span>Wajibkan Kode Rapat saat peserta masuk</span>
+              </label>
+
+              <label class="check-row">
+                <input type="checkbox" id="adminAllowSelfAddToggle" />
+                <span>Izinkan peserta menambahkan nama baru</span>
+              </label>
+
+              <label class="check-row check-danger">
+                <input type="checkbox" id="adminLockToggle" />
+                <span>Kunci dokumen (hentikan semua tanda tangan baru)</span>
+              </label>
+
+              <div class="field-group">
+                <label for="adminNewPinInput" class="field-label">Ubah PIN Panitia <span class="muted">(opsional)</span></label>
+                <input id="adminNewPinInput" type="password" class="input-control" placeholder="Kosongkan jika tetap" maxlength="24" />
+              </div>
+
+              <div id="adminSaveMsg" class="msg-inline hidden"></div>
+
+              <button type="button" id="saveAdminSettingsBtn" class="btn btn-primary">
+                Simpan Pengaturan
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-col">
+            <h2 class="sub-heading">Riwayat Aktivitas</h2>
+            <p class="sub-desc">Catatan kronologis penandatanganan (waktu WITA).</p>
+            <div id="activityList" class="activity-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== MODAL 1: PENANDATANGANAN (AUTO-SMOOTH DRAW / UPLOAD) ===== -->
+  <div id="signModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="signModalTitle">
+    <div class="modal-panel modal-signing">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker" id="signModalKicker">Penandatanganan</p>
+          <h2 class="modal-title" id="signModalTitle">Nama Pejabat</h2>
+          <p class="modal-subtitle" id="signModalRole">Jabatan / Instansi</p>
+        </div>
+        <button type="button" class="icon-close" id="closeSignModalBtn" aria-label="Tutup">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Kehadiran -->
+        <div class="attendance-row" role="radiogroup" aria-label="Kehadiran">
+          <label class="radio-opt">
+            <input type="radio" name="attendanceMode" value="direct" checked />
+            <span>Hadir langsung</span>
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="attendanceMode" value="representative" />
+            <span>Mewakili (a.n.)</span>
+          </label>
+        </div>
+
+        <div id="representativeFields" class="rep-box hidden">
+          <div class="rep-grid">
+            <div class="field-group compact">
+              <label for="repNameInput" class="field-label">Nama Lengkap Perwakilan *</label>
+              <input id="repNameInput" type="text" class="input-control" placeholder="Nama yang menandatangani" maxlength="140" />
+            </div>
+            <div class="field-group compact">
+              <label for="repRoleInput" class="field-label">Jabatan Perwakilan</label>
+              <input id="repRoleInput" type="text" class="input-control" placeholder="Mis. Sekretaris / Kabid" maxlength="160" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode Switch -->
+        <div class="mode-tabs" role="tablist">
+          <button type="button" class="mode-tab active" data-sign-mode="draw" role="tab" aria-selected="true">
+            Tanda Tangan Langsung
+          </button>
+          <button type="button" class="mode-tab" data-sign-mode="upload" role="tab" aria-selected="false">
+            Unggah Gambar TTD
+          </button>
+        </div>
+
+        <!-- DRAW PANEL -->
+        <div id="drawPanel">
+          <div class="pad-bar">
+            <div class="pad-group">
+              <button type="button" class="swatch active" data-ink="#111827" style="--sw:#111827" title="Hitam" aria-label="Hitam"></button>
+              <button type="button" class="swatch" data-ink="#1E3A5F" style="--sw:#1E3A5F" title="Biru Tua" aria-label="Biru Tua"></button>
+              <button type="button" class="swatch" data-ink="#1D4ED8" style="--sw:#1D4ED8" title="Biru Pena" aria-label="Biru Pena"></button>
+              <span class="pad-sep"></span>
+              <button type="button" class="chip-btn" data-thickness="fine">Halus</button>
+              <button type="button" class="chip-btn active" data-thickness="medium">Sedang</button>
+              <button type="button" class="chip-btn" data-thickness="bold">Tebal</button>
+            </div>
+            <div class="pad-group">
+              <button type="button" id="padUndoBtn" class="text-btn" disabled>Urungkan</button>
+              <button type="button" id="padClearBtn" class="text-btn">Ulangi</button>
+              <button type="button" id="padFullscreenBtn" class="btn btn-outline btn-xs">Perbesar</button>
+            </div>
+          </div>
+
+          <div id="padCanvasWrap" class="pad-wrap">
+            <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+            <div id="padPlaceholder" class="pad-placeholder" aria-hidden="true">
+              <span>Goreskan tanda tangan di sini</span>
+              <small>Garis otomatis diperhalus seperti tinta pena</small>
+            </div>
+            <div class="pad-line" aria-hidden="true"></div>
+            <button type="button" id="padExitFullscreenBtn" class="btn btn-primary btn-sm pad-exit-fs hidden">
+              Selesai
+            </button>
+          </div>
+        </div>
+
+        <!-- UPLOAD PANEL -->
+        <div id="uploadPanel" class="hidden">
+          <input id="sigFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="sr-only" />
+          <div id="uploadDropzone" class="upload-zone" tabindex="0" role="button">
+            <p class="upload-main">Pilih atau seret file gambar tanda tangan (PNG / JPG)</p>
+            <p class="upload-sub">Latar belakang kertas putih akan dibersihkan otomatis menjadi transparan.</p>
+          </div>
+
+          <div id="uploadEditor" class="upload-editor hidden">
+            <div class="upload-stage">
+              <canvas id="uploadPreviewCanvas" class="upload-preview-canvas"></canvas>
+              <button type="button" id="uploadChangeBtn" class="btn btn-outline btn-xs upload-change">Ganti</button>
+            </div>
+
+            <div class="upload-opts">
+              <label class="check-row">
+                <input type="checkbox" id="removeBgToggle" checked />
+                <span>Hapus latar kertas otomatis (transparan)</span>
+              </label>
+
+              <div id="thresholdControl" class="slider-wrap">
+                <div class="slider-label">
+                  <label for="bgThresholdSlider">Kejernihan Tinta</label>
+                  <span id="bgThresholdValue" class="mono">205</span>
+                </div>
+                <input id="bgThresholdSlider" type="range" min="110" max="245" value="205" />
+              </div>
+
+              <div class="recolor-bar">
+                <span class="muted" style="font-size:12px">Warna tinta:</span>
+                <div class="pad-group">
+                  <button type="button" class="chip-btn active" data-recolor="original">Asli</button>
+                  <button type="button" class="chip-btn" data-recolor="#111827">Hitam</button>
+                  <button type="button" class="chip-btn" data-recolor="#1E3A5F">Biru Tua</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <label class="consent-row">
+          <input type="checkbox" id="signConsentCheck" checked />
+          <span>Saya menyetujui isi Berita Acara Kesepakatan Forum Satu Data Kabupaten Berau Tahun 2026.</span>
+        </label>
+
+        <div id="signError" class="msg-inline msg-error hidden" role="alert"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="cancelSignBtn" class="btn btn-outline">Batal</button>
+        <button type="button" id="submitSignBtn" class="btn btn-primary">Simpan Tanda Tangan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL 2: DETAIL & UNDUH PER ORANG ===== -->
+  <div id="detailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+    <div class="modal-panel modal-sm-wide">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">Bukti Penandatanganan</p>
+          <h2 class="modal-title" id="detailModalTitle">—</h2>
+          <p class="modal-subtitle" id="detailModalRole">—</p>
+        </div>
+        <button type="button" class="icon-close" id="closeDetailModalBtn" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body" id="detailModalBody"></div>
+      <div class="modal-footer modal-footer-between">
+        <div id="detailAdminActions" class="hidden">
+          <button type="button" id="detailResetSigBtn" class="btn btn-danger-outline btn-sm">Reset TTD</button>
+        </div>
+        <button type="button" id="closeDetailDoneBtn" class="btn btn-primary">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL 3: BACA NASKAH BERITA ACARA ===== -->
+  <div id="readDocModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="readDocTitle">
+    <div class="modal-panel modal-signing">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">Naskah Resmi</p>
+          <h2 class="modal-title" id="readDocTitle">Berita Acara Kesepakatan</h2>
+        </div>
+        <button type="button" class="icon-close" id="closeReadDocBtn" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body read-doc-body" id="readDocBody"></div>
+      <div class="modal-footer">
+        <button type="button" id="closeReadDocDoneBtn" class="btn btn-primary">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL 4: TAMBAH PESERTA ===== -->
+  <div id="addModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+    <div class="modal-panel modal-sm">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">Daftar Penandatangan</p>
+          <h2 class="modal-title" id="addModalTitle">Tambah Peserta Baru</h2>
+        </div>
+        <button type="button" class="icon-close" id="closeAddModalBtn" aria-label="Tutup">&times;</button>
+      </div>
+      <form id="addParticipantForm">
+        <div class="modal-body">
+          <div class="field-group">
+            <label for="newPartName" class="field-label">Nama Lengkap *</label>
+            <input id="newPartName" type="text" class="input-control" placeholder="Nama lengkap" required maxlength="140" />
+          </div>
+          <div class="field-group">
+            <label for="newPartRole" class="field-label">Jabatan / Instansi / OPD *</label>
+            <input id="newPartRole" type="text" class="input-control" placeholder="Contoh: Kepala BPS Kabupaten Berau" required maxlength="180" />
+          </div>
+          <label class="check-row">
+            <input type="checkbox" id="newPartSignNow" checked />
+            <span>Langsung buka tanda tangan setelah ditambahkan</span>
+          </label>
+          <div id="addError" class="msg-inline msg-error hidden" role="alert"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelAddBtn" class="btn btn-outline">Batal</button>
+          <button type="submit" id="submitAddBtn" class="btn btn-primary">Tambahkan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== MODAL 5: QR RAPAT ===== -->
+  <div id="qrModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
+    <div class="modal-panel modal-sm">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">Tautan Akses</p>
+          <h2 class="modal-title" id="qrModalTitle">QR Code Ruang Rapat</h2>
+        </div>
+        <button type="button" class="icon-close" id="closeQrModalBtn" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body qr-body">
+        <div id="qrSvgBox" class="qr-svg-box"></div>
+        <p id="qrCodeHintBox" class="qr-code-line hidden">
+          Kode Rapat: <strong id="qrCodeHintVal" class="mono">—</strong>
+        </p>
+        <div class="qr-url-row">
+          <input id="qrUrlInput" type="text" class="input-control mono" readonly />
+          <button type="button" id="copyQrUrlBtn" class="btn btn-outline btn-sm">Salin</button>
+        </div>
+        <label id="qrAutoCodeOption" class="check-row hidden">
+          <input type="checkbox" id="qrIncludeCodeCheck" />
+          <span>Sertakan Kode Rapat otomatis di QR (1× scan masuk)</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="closeQrDoneBtn" class="btn btn-primary btn-full">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL 6: LOGIN PANITIA ===== -->
+  <div id="adminLoginModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle">
+    <div class="modal-panel modal-sm">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">Penyelenggara</p>
+          <h2 class="modal-title" id="adminLoginTitle">Masuk Mode Panitia</h2>
+        </div>
+        <button type="button" class="icon-close" id="closeAdminLoginBtn" aria-label="Tutup">&times;</button>
+      </div>
+      <form id="adminLoginForm">
+        <div class="modal-body">
+          <p class="muted" style="margin:0 0 14px;font-size:13px;">Masukkan PIN Panitia untuk mengubah kode rapat, mengunci dokumen, mengedit nama, atau mereset tanda tangan.</p>
+          <div class="field-group">
+            <label for="adminPinInput" class="field-label">PIN Panitia</label>
+            <input id="adminPinInput" type="password" class="input-control input-code" placeholder="••••••" required maxlength="24" />
+          </div>
+          <div id="adminLoginError" class="msg-inline msg-error hidden" role="alert"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelAdminLoginBtn" class="btn btn-outline">Batal</button>
+          <button type="submit" class="btn btn-primary">Masuk</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== MODAL 7: EDIT DATA (PANITIA) ===== -->
+  <div id="editModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="modal-panel modal-sm">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">Panitia</p>
+          <h2 class="modal-title" id="editModalTitle">Edit Nama &amp; Jabatan</h2>
+        </div>
+        <button type="button" class="icon-close" id="closeEditModalBtn" aria-label="Tutup">&times;</button>
+      </div>
+      <form id="editSignatoryForm">
+        <div class="modal-body">
+          <input type="hidden" id="editSignatoryId" />
+          <div class="field-group">
+            <label for="editNameInput" class="field-label">Nama Lengkap</label>
+            <input id="editNameInput" type="text" class="input-control" required maxlength="140" />
+          </div>
+          <div class="field-group">
+            <label for="editRoleInput" class="field-label">Jabatan / Instansi</label>
+            <input id="editRoleInput" type="text" class="input-control" required maxlength="180" />
+          </div>
+          <div id="editError" class="msg-inline msg-error hidden"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelEditBtn" class="btn btn-outline">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastStack" class="toast-stack no-print" aria-live="polite"></div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

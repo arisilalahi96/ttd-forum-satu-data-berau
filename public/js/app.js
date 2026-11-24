@@ -396,8 +396,6 @@ function renderChrome() {
   $('dlFullDocx').href = buildDownloadUrl('/api/export/berita-acara.docx');
   $('dlFullPdf').href = buildDownloadUrl('/api/export/berita-acara.pdf');
   $('dlRekapCsv').href = buildDownloadUrl('/api/export/rekap.csv');
-  $('dlZipDocx').href = buildDownloadUrl('/api/export/bundle-docx.zip');
-  $('dlZipPdf').href = buildDownloadUrl('/api/export/bundle-pdf.zip');
 
   if (state.documentMeta) {
     const m = state.documentMeta;
@@ -517,9 +515,9 @@ function renderList() {
       if (s.signed && s.signatureUrl) {
         sigCell = `
           <div class="r-sig-cell">
-            <button type="button" class="r-sig-well" data-action="detail" data-id="${esc(s.id)}" title="Lihat waktu verifikasi">
+            <div class="r-sig-well">
               <img src="${esc(s.signatureUrl)}" alt="TTD ${esc(s.name)}" loading="lazy" />
-            </button>
+            </div>
             <span class="r-sig-time">${esc(formatWitaTime(s.signedAt))}</span>
           </div>
         `;
@@ -531,7 +529,6 @@ function renderList() {
       if (s.signed) {
         if (state.isAdmin) {
           actionCell = `
-            <button type="button" class="text-btn" data-action="detail" data-id="${esc(s.id)}">Unduh</button>
             <button type="button" class="text-btn" data-action="edit" data-id="${esc(s.id)}">Edit</button>
             <button type="button" class="text-btn text-btn-danger" data-action="clear" data-id="${esc(s.id)}">Reset</button>
             ${s.isCustom ? `<button type="button" class="text-btn text-btn-danger" data-action="delete" data-id="${esc(s.id)}">Hapus</button>` : ''}
@@ -667,7 +664,6 @@ function openSignModal(signatoryId) {
     return;
   }
   if (sig.signed && !state.isAdmin) {
-    openDetailModal(signatoryId);
     return;
   }
 
@@ -772,50 +768,6 @@ async function submitSignature() {
   }
 }
 
-// ===== DETAIL & INDIVIDUAL DOWNLOAD MODAL =====
-function openDetailModal(signatoryId) {
-  const sig = state.signatories.find((s) => s.id === signatoryId);
-  if (!sig || !sig.signed) return;
-  state.detailSignatoryId = signatoryId;
-
-  $('detailModalTitle').textContent = sig.name;
-  $('detailModalRole').textContent = sig.role;
-
-  const docxUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(sig.id)}.docx`);
-  const pdfUrl = buildDownloadUrl(`/api/export/individual/${encodeURIComponent(sig.id)}.pdf`);
-  const pngUrl = buildDownloadUrl(`/api/export/signature/${encodeURIComponent(sig.id)}.png`);
-  // STRICT: Individual TTD downloads are Panitia-only! Participants can only download the full Berita Acara.
-  const adminDownloadBlock = state.isAdmin
-    ? `
-      <div class="detail-dl-row">
-        <a class="btn btn-primary btn-sm" href="${esc(docxUrl)}">Word (.docx)</a>
-        <a class="btn btn-primary btn-sm" href="${esc(pdfUrl)}">PDF (.pdf)</a>
-        <a class="btn btn-outline btn-sm" href="${esc(pngUrl)}">PNG</a>
-      </div>
-    `
-    : `<p class="muted" style="margin:0;font-size:12.5px">Gunakan menu <strong>Unduh</strong> di kanan atas untuk mengunduh Berita Acara lengkap (Word / PDF).</p>`;
-
-  $('detailModalBody').innerHTML = `
-    <div class="detail-sig-box">
-      <img src="${esc(sig.signatureUrl)}" alt="Tanda tangan ${esc(sig.name)}" />
-    </div>
-    <div class="detail-meta-list">
-      <div class="detail-meta-row"><span>Bagian</span><span class="mono">${sig.isRepresentative ? `Unsur ${sig.repOrder}` : `Lampiran I — No. ${sig.rowNumber}`}</span></div>
-      <div class="detail-meta-row"><span>Waktu</span><span>${esc(formatWitaFull(sig.signedAt))}</span></div>
-      <div class="detail-meta-row"><span>Verifikasi</span><span class="mono">${esc(sig.verificationHash || '-')}</span></div>
-    </div>
-    ${adminDownloadBlock}
-  `;
-
-  $('detailAdminActions').classList.toggle('hidden', !state.isAdmin);
-  $('detailModal').classList.remove('hidden');
-}
-
-function closeDetailModal() {
-  state.detailSignatoryId = null;
-  $('detailModal').classList.add('hidden');
-}
-
 // ===== QR ZOOM MODAL (PESERTA: SCAN QR ONLY; PANITIA: EDIT ZOOM LINK) =====
 let currentQrTargetUrl = '';
 
@@ -912,7 +864,6 @@ async function clearSignatorySignature(id) {
       method: 'POST',
       body: JSON.stringify({ reason: 'Reset Panitia' }),
     });
-    closeDetailModal();
   } catch (err) {
     showToast(err.message || 'Gagal mereset tanda tangan.');
   }
@@ -1125,7 +1076,6 @@ function bindEvents() {
     if (trigger) {
       const { action, id } = trigger.dataset;
       if (action === 'sign') openSignModal(id);
-      else if (action === 'detail') openDetailModal(id);
       else if (action === 'clear') clearSignatorySignature(id);
       else if (action === 'edit') openEditModal(id);
       else if (action === 'delete') deleteCustomSignatory(id);
@@ -1136,7 +1086,6 @@ function bindEvents() {
     if (docTrigger) {
       const { docAction, id } = docTrigger.dataset;
       if (docAction === 'sign') openSignModal(id);
-      else if (docAction === 'detail') openDetailModal(id);
     }
   });
 
@@ -1236,13 +1185,6 @@ function bindEvents() {
     }
   }
 
-  // Detail Modal
-  $('closeDetailModalBtn').addEventListener('click', closeDetailModal);
-  $('closeDetailDoneBtn').addEventListener('click', closeDetailModal);
-  $('detailResetSigBtn').addEventListener('click', () => {
-    if (state.detailSignatoryId) clearSignatorySignature(state.detailSignatoryId);
-  });
-
   // Add Participant Modal
   $('addParticipantBtn').addEventListener('click', () => {
     $('addError').classList.add('hidden');
@@ -1308,7 +1250,6 @@ function bindEvents() {
     if (e.key !== 'Escape') return;
     if ($('padCanvasWrap').classList.contains('is-fullscreen')) exitPadFullscreen();
     else if (!$('signModal').classList.contains('hidden')) closeSignModal();
-    else if (!$('detailModal').classList.contains('hidden')) closeDetailModal();
     else if (!$('addModal').classList.contains('hidden')) $('addModal').classList.add('hidden');
     else if (!$('qrModal').classList.contains('hidden')) $('qrModal').classList.add('hidden');
     else if (!$('adminLoginModal').classList.contains('hidden')) $('adminLoginModal').classList.add('hidden');

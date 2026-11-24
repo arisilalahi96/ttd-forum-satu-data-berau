@@ -64,7 +64,7 @@
         </div>
 
         <div class="topbar-right">
-          <!-- Single Clean Download Dropdown (Peserta: Word & PDF only; Panitia: Full Archive) -->
+          <!-- Single Clean Download Dropdown -->
           <div class="dropdown" id="exportDropdown">
             <button type="button" id="exportMenuBtn" class="btn btn-primary btn-sm">
               Unduh &#9662;
@@ -87,14 +87,6 @@
                 <a id="dlRekapCsv" class="dropdown-item" href="#">
                   <strong>Rekap Daftar (.csv)</strong>
                   <small>Tabel status &amp; waktu untuk Excel</small>
-                </a>
-                <a id="dlZipDocx" class="dropdown-item" href="#">
-                  <strong>Per Orang — ZIP Word</strong>
-                  <small>Semua bukti .docx + PNG</small>
-                </a>
-                <a id="dlZipPdf" class="dropdown-item" href="#">
-                  <strong>Per Orang — ZIP PDF</strong>
-                  <small>Semua bukti .pdf + PNG</small>
                 </a>
               </div>
             </div>
@@ -211,7 +203,7 @@
         <section id="viewDocument" class="hidden">
           <div id="docNormalBar" class="doc-normal-bar no-print">
             <p class="doc-hint-line" style="margin:0">
-              Klik langsung pada kolom tanda tangan di naskah untuk membubuhkan tanda tangan atau melihat verifikasi.
+              Klik langsung pada kolom tanda tangan yang masih kosong di naskah untuk membubuhkan tanda tangan.
             </p>
             <button type="button" id="docStartEditBtn" class="btn btn-outline btn-sm hidden">
               Edit Teks di Naskah
@@ -345,28 +337,7 @@
     </div>
   </div>
 
-  <!-- ===== MODAL 2: BUKTI & UNDUH PER ORANG ===== -->
-  <div id="detailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
-    <div class="modal-panel modal-sm-wide">
-      <div class="modal-header">
-        <div>
-          <p class="modal-kicker">Bukti Penandatanganan</p>
-          <h2 class="modal-title" id="detailModalTitle">—</h2>
-          <p class="modal-subtitle" id="detailModalRole">—</p>
-        </div>
-        <button type="button" class="icon-close" id="closeDetailModalBtn" aria-label="Tutup">&times;</button>
-      </div>
-      <div class="modal-body" id="detailModalBody"></div>
-      <div class="modal-footer modal-footer-between">
-        <div id="detailAdminActions" class="hidden">
-          <button type="button" id="detailResetSigBtn" class="btn btn-danger-outline btn-sm">Hapus / Reset TTD</button>
-        </div>
-        <button type="button" id="closeDetailDoneBtn" class="btn btn-primary">Tutup</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== MODAL 3: TAMBAH PESERTA ===== -->
+  <!-- ===== MODAL 2: TAMBAH PESERTA ===== -->
   <div id="addModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
     <div class="modal-panel modal-sm">
       <div class="modal-header">

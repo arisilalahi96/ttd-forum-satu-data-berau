@@ -8,7 +8,7 @@ const { cloneDefaultDocumentMeta, createInitialSignatories, classifyInstansiGrou
 const { computeVerificationHash } = require('./utils/pngTools');
 const { normalizeCode } = require('./utils/formatters');
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, '..', 'data'));
 const SIGNATURES_DIR = path.join(DATA_DIR, 'signatures');
 const STATE_FILE = path.join(DATA_DIR, 'store.json');
@@ -20,6 +20,31 @@ class ForumStore {
     this.state = null;
     this.signatureCache = new Map();
     this.writeQueue = Promise.resolve();
+  }
+
+  _upgradeSignatoriesAndMeta(parsed) {
+    const freshSignatories = createInitialSignatories();
+    const freshById = new Map(freshSignatories.map((s) => [s.id, s]));
+    const oldList = Array.isArray(parsed.signatories) ? parsed.signatories : [];
+
+    const upgraded = oldList.map((oldSig) => {
+      const fresh = freshById.get(oldSig.id);
+      if (!fresh) return oldSig;
+      return {
+        ...oldSig,
+        name: fresh.name,
+        role: fresh.role,
+        roleLines: fresh.roleLines,
+        instansiGroup: fresh.instansiGroup,
+      };
+    });
+
+    return {
+      ...parsed,
+      version: SCHEMA_VERSION,
+      documentMeta: cloneDefaultDocumentMeta(),
+      signatories: upgraded.length ? upgraded : freshSignatories,
+    };
   }
 
   _defaultState(preserveSettings = null) {
@@ -71,13 +96,15 @@ class ForumStore {
     if (fs.existsSync(STATE_FILE)) {
       const raw = await fsp.readFile(STATE_FILE, 'utf8');
       const parsed = JSON.parse(raw);
-      if ((parsed.version || 1) < SCHEMA_VERSION) {
-        // Auto-migrate from v1 draft to v2 official Berita Acara while preserving Panitia settings
+      if ((parsed.version || 1) < 2) {
         this.state = this._defaultState(parsed.settings || null);
         this.signatureCache.clear();
         await this._persistStateImmediate();
       } else {
-        this.state = parsed;
+        this.state = (parsed.version || 1) < SCHEMA_VERSION ? this._upgradeSignatoriesAndMeta(parsed) : parsed;
+        if ((parsed.version || 1) < SCHEMA_VERSION) {
+          await this._persistStateImmediate();
+        }
         for (const s of this.state.signatories) {
           if (s.signed) {
             const p = path.join(SIGNATURES_DIR, `${s.id}.png`);
@@ -122,12 +149,15 @@ class ForumStore {
     const res = await this.pgPool.query(`SELECT payload FROM fsd_app_state WHERE key = 'main'`);
     if (res.rows.length > 0) {
       const parsed = res.rows[0].payload;
-      if ((parsed.version || 1) < SCHEMA_VERSION) {
+      if ((parsed.version || 1) < 2) {
         this.state = this._defaultState(parsed.settings || null);
         await this.pgPool.query(`DELETE FROM fsd_signatures`);
         await this._persistStateImmediate();
       } else {
-        this.state = parsed;
+        this.state = (parsed.version || 1) < SCHEMA_VERSION ? this._upgradeSignatoriesAndMeta(parsed) : parsed;
+        if ((parsed.version || 1) < SCHEMA_VERSION) {
+          await this._persistStateImmediate();
+        }
         const sigRes = await this.pgPool.query(`SELECT signatory_id, png_base64 FROM fsd_signatures`);
         for (const row of sigRes.rows) {
           this.signatureCache.set(row.signatory_id, Buffer.from(row.png_base64, 'base64'));

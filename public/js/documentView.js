@@ -6,6 +6,10 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
+function escWithItalics(str) {
+  return esc(str).replace(/\b(online|Zoom Meeting)\b/g, '<em>$1</em>');
+}
+
 function editableAttrs(field, singleLine = false) {
   return `contenteditable="true" spellcheck="false" class="inline-editable" data-edit-field="${field}" ${
     singleLine ? 'data-single-line="1"' : ''
@@ -60,7 +64,7 @@ export function renderOfficialDocument({
              <span class="inline-editable editable-li-text" contenteditable="true" spellcheck="false" data-edit-consideration="1">${esc(pt)}</span>
              <button type="button" class="inline-del-btn" data-remove-row="consideration" title="Hapus poin">&times;</button>
            </li>`
-        : `<li>${esc(pt)}</li>`
+        : `<li>${escWithItalics(pt)}</li>`
     )
     .join('');
 
@@ -80,7 +84,7 @@ export function renderOfficialDocument({
         : `<tr>
              <td class="kv-lbl">${esc(r.label)}</td>
              <td class="kv-colon">:</td>
-             <td class="kv-val">${esc(r.value)}</td>
+             <td class="kv-val">${escWithItalics(r.value)}</td>
            </tr>`
     )
     .join('');
@@ -120,7 +124,7 @@ export function renderOfficialDocument({
       let slotHtml = '';
       if (rep.signed && rep.signatureUrl) {
         slotHtml = `
-          <div class="rep-sig-slot" ${editMode ? '' : `data-doc-action="detail" data-id="${esc(rep.id)}"`} title="Klik untuk melihat verifikasi">
+          <div class="rep-sig-slot is-signed">
             <img src="${esc(rep.signatureUrl)}" alt="TTD ${esc(rep.name)}" />
           </div>
         `;
@@ -153,7 +157,7 @@ export function renderOfficialDocument({
         ${
           editMode
             ? `<span ${editableAttrs('openingParagraph')}>${esc(documentMeta.openingParagraph)}</span>`
-            : esc(documentMeta.openingParagraph)
+            : escWithItalics(documentMeta.openingParagraph)
         }
       </p>
 
@@ -220,7 +224,7 @@ export function renderOfficialDocument({
       let sigCellHtml = '';
       if (s.signed && s.signatureUrl) {
         sigCellHtml = `
-          <td class="paper-sig-cell" ${editMode ? '' : `data-doc-action="detail" data-id="${esc(s.id)}"`}>
+          <td class="paper-sig-cell is-signed">
             <img class="paper-sig-img" src="${esc(s.signatureUrl)}" alt="TTD ${esc(s.name)}" loading="lazy" />
           </td>
         `;

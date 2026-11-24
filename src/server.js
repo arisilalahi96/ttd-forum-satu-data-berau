@@ -11,12 +11,10 @@ const QRCode = require('qrcode');
 const { ForumStore } = require('./store');
 const { RealtimeHub } = require('./realtime');
 const { parseAndValidatePngDataUrl } = require('./utils/pngTools');
-const { normalizeCode, sanitizeFilename } = require('./utils/formatters');
+const { normalizeCode } = require('./utils/formatters');
 const { generateBeritaAcaraDocx } = require('./exporters/docxBeritaAcara');
-const { generateIndividualDocx } = require('./exporters/docxIndividual');
 const { generateBeritaAcaraPdf } = require('./exporters/pdfBeritaAcara');
-const { generateIndividualPdf } = require('./exporters/pdfIndividual');
-const { generateRekapCsv, generateIndividualBundleZip } = require('./exporters/zipArchive');
+const { generateRekapCsv } = require('./exporters/zipArchive');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -312,57 +310,7 @@ async function startServer() {
     }
   });
 
-  // ===== INDIVIDUAL EXPORTS (PANITIA ONLY — PARTICIPANTS CANNOT DOWNLOAD INDIVIDUAL TTD) =====
-  app.get('/api/export/individual/:id.docx', requireAdmin, async (req, res) => {
-    try {
-      const sig = store.getSignatory(req.params.id);
-      if (!sig) return res.status(404).json({ error: 'Data penandatangan tidak ditemukan.' });
-      const pngBuf = store.getSignatureBuffer(sig.id);
-      const buf = await generateIndividualDocx(sig, pngBuf, store.getDocumentMeta());
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      );
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="Bukti_TTD_${sanitizeFilename(sig.name)}.docx"`
-      );
-      return res.send(buf);
-    } catch (err) {
-      console.error('Individual DOCX error:', err);
-      return res.status(500).json({ error: 'Gagal menyusun file Word individual.' });
-    }
-  });
-
-  app.get('/api/export/individual/:id.pdf', requireAdmin, async (req, res) => {
-    try {
-      const sig = store.getSignatory(req.params.id);
-      if (!sig) return res.status(404).json({ error: 'Data penandatangan tidak ditemukan.' });
-      const pngBuf = store.getSignatureBuffer(sig.id);
-      const buf = await generateIndividualPdf(sig, pngBuf, store.getDocumentMeta());
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="Bukti_TTD_${sanitizeFilename(sig.name)}.pdf"`
-      );
-      return res.send(buf);
-    } catch (err) {
-      console.error('Individual PDF error:', err);
-      return res.status(500).json({ error: 'Gagal menyusun file PDF individual.' });
-    }
-  });
-
-  // ===== PANITIA-ONLY EXPORTS (RAW PNG, CSV REKAP, ZIP BUNDLES) =====
-  app.get('/api/export/signature/:id.png', requireAdmin, (req, res) => {
-    const sig = store.getSignatory(req.params.id);
-    if (!sig || !sig.signed) return res.status(404).json({ error: 'Tanda tangan belum tersedia.' });
-    const pngBuf = store.getSignatureBuffer(sig.id);
-    if (!pngBuf) return res.status(404).json({ error: 'Gambar tanda tangan tidak ditemukan.' });
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Disposition', `attachment; filename="TTD_${sanitizeFilename(sig.name)}.png"`);
-    return res.send(pngBuf);
-  });
-
+  // ===== PANITIA-ONLY EXPORT: CSV REKAP =====
   app.get('/api/export/rekap.csv', requireAdmin, (_req, res) => {
     const csvBuf = generateRekapCsv(store);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -371,36 +319,6 @@ async function startServer() {
       'attachment; filename="Rekap_Penandatanganan_FSD_Berau_2026.csv"'
     );
     return res.send(csvBuf);
-  });
-
-  app.get('/api/export/bundle-pdf.zip', requireAdmin, async (_req, res) => {
-    try {
-      const zipBuf = await generateIndividualBundleZip(store, 'pdf');
-      res.setHeader('Content-Type', 'application/zip');
-      res.setHeader(
-        'Content-Disposition',
-        'attachment; filename="Arsip_Bukti_TTD_PDF_FSD_Berau_2026.zip"'
-      );
-      return res.send(zipBuf);
-    } catch (err) {
-      console.error('ZIP PDF error:', err);
-      return res.status(500).json({ error: 'Gagal membuat arsip ZIP PDF.' });
-    }
-  });
-
-  app.get('/api/export/bundle-docx.zip', requireAdmin, async (_req, res) => {
-    try {
-      const zipBuf = await generateIndividualBundleZip(store, 'docx');
-      res.setHeader('Content-Type', 'application/zip');
-      res.setHeader(
-        'Content-Disposition',
-        'attachment; filename="Arsip_Bukti_TTD_Word_FSD_Berau_2026.zip"'
-      );
-      return res.send(zipBuf);
-    } catch (err) {
-      console.error('ZIP DOCX error:', err);
-      return res.status(500).json({ error: 'Gagal membuat arsip ZIP Word.' });
-    }
   });
 
   // ===== ADMIN / PANITIA CONTROLS =====

@@ -42,6 +42,8 @@ function fitPx(w, h, maxW, maxH) {
   };
 }
 
+const FOREIGN_TERMS_RE = /(\b(?:online|Zoom Meeting)\b)/g;
+
 function makeTextRun(text, opts = {}) {
   return new TextRun({
     text: String(text ?? ''),
@@ -52,6 +54,25 @@ function makeTextRun(text, opts = {}) {
     underline: opts.underline ? {} : undefined,
     color: opts.color || '000000',
   });
+}
+
+function makeRichTextRuns(text, opts = {}) {
+  const str = String(text ?? '');
+  if (!FOREIGN_TERMS_RE.test(str)) {
+    FOREIGN_TERMS_RE.lastIndex = 0;
+    return [makeTextRun(str, opts)];
+  }
+  FOREIGN_TERMS_RE.lastIndex = 0;
+  const parts = str.split(FOREIGN_TERMS_RE);
+  return parts
+    .filter((p) => p.length > 0)
+    .map((part) => {
+      const isForeign = /^(?:online|Zoom Meeting)$/.test(part);
+      return makeTextRun(part, {
+        ...opts,
+        italics: Boolean(opts.italics) || isForeign,
+      });
+    });
 }
 
 function buildKeyValueTable(rows, labelPct = 24) {
@@ -89,7 +110,7 @@ function buildKeyValueTable(rows, labelPct = 24) {
               children: [
                 new Paragraph({
                   alignment: AlignmentType.JUSTIFIED,
-                  children: [makeTextRun(r.value)],
+                  children: makeRichTextRuns(r.value),
                 }),
               ],
             }),
@@ -212,7 +233,7 @@ async function generateBeritaAcaraDocx(store) {
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         spacing: { after: 140, line: 276 },
-        children: [makeTextRun(meta.openingParagraph)],
+        children: makeRichTextRuns(meta.openingParagraph),
       })
     );
   }
@@ -223,7 +244,7 @@ async function generateBeritaAcaraDocx(store) {
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         spacing: { after: 80, line: 276 },
-        children: [makeTextRun(meta.considerationsHeading)],
+        children: makeRichTextRuns(meta.considerationsHeading),
       })
     );
   }
@@ -234,7 +255,7 @@ async function generateBeritaAcaraDocx(store) {
         alignment: AlignmentType.JUSTIFIED,
         indent: { left: 420, hanging: 260 },
         spacing: { after: 60, line: 276 },
-        children: [makeTextRun(`${idx + 1}.  `), makeTextRun(pt)],
+        children: [makeTextRun(`${idx + 1}.  `), ...makeRichTextRuns(pt)],
       })
     );
   });

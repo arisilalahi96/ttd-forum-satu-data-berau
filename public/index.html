@@ -17,37 +17,55 @@
   <!-- ===== ACCESS GATE (KODE RAPAT) ===== -->
   <section id="accessGate" class="gate-screen hidden" aria-label="Masuk Ruang Penandatanganan">
     <div class="gate-box">
-      <p class="gate-kicker">e-TTD Berita Acara</p>
-      <h1 class="gate-title">Forum Satu Data Kabupaten Berau 2026</h1>
-      <p class="gate-meta">
-        <span id="gateEventDate">Rabu, 25 November 2026</span> · Ruang Rapat RKPD Bapperida
-        <br />
-        Progres: <strong class="mono" id="gateProgress">—</strong>
-      </p>
-
-      <form id="gateForm" autocomplete="off">
-        <div class="field-group">
-          <label for="gateCodeInput" class="field-label">Kode Rapat</label>
-          <input
-            id="gateCodeInput"
-            type="text"
-            class="input-control input-code"
-            placeholder="Masukkan Kode Rapat"
-            required
-            maxlength="24"
-            autofocus
-          />
+      <div class="gate-header-accent"></div>
+      <div class="gate-body">
+        <div class="gate-badge-row">
+          <span class="gate-badge">Pemerintah Kabupaten Berau</span>
+          <span class="gate-badge-dot">·</span>
+          <span class="gate-badge">e-TTD Berita Acara</span>
         </div>
 
-        <div id="gateError" class="msg-inline msg-error hidden" role="alert"></div>
+        <h1 class="gate-title">Berita Acara Hasil Kesepakatan Forum Satu Data Kabupaten Berau Tahun 2026</h1>
 
-        <button type="submit" id="gateSubmitBtn" class="btn btn-primary btn-full btn-lg">
-          Masuk
-        </button>
-      </form>
+        <div class="gate-info-card">
+          <div class="gate-info-item">
+            <span class="gate-info-label">Pelaksanaan</span>
+            <span class="gate-info-val" id="gateEventDate">Rabu, 25 November 2026 · Pukul 08.00 – 12.00 WITA</span>
+          </div>
+          <div class="gate-info-item">
+            <span class="gate-info-label">Tempat</span>
+            <span class="gate-info-val">Ruang Rapat RKPD Bapperida Kabupaten Berau</span>
+          </div>
+          <div class="gate-info-item gate-info-row-inline">
+            <span class="gate-info-label">Status Tanda Tangan</span>
+            <strong class="gate-info-stat mono" id="gateProgress">—</strong>
+          </div>
+        </div>
 
-      <div class="gate-footer">
-        <button type="button" id="gateAdminLink" class="text-btn">Masuk sebagai Panitia (PIN)</button>
+        <form id="gateForm" autocomplete="off">
+          <div class="field-group">
+            <label for="gateCodeInput" class="field-label">Kode Rapat Peserta</label>
+            <input
+              id="gateCodeInput"
+              type="text"
+              class="input-control input-code gate-code-input"
+              placeholder="Ketik Kode Rapat..."
+              required
+              maxlength="24"
+              autofocus
+            />
+          </div>
+
+          <div id="gateError" class="msg-inline msg-error hidden" role="alert"></div>
+
+          <button type="submit" id="gateSubmitBtn" class="btn btn-primary btn-full btn-lg">
+            Masuk Ruang Penandatanganan
+          </button>
+        </form>
+
+        <div class="gate-footer">
+          <button type="button" id="gateAdminLink" class="text-btn">Masuk sebagai Panitia (PIN)</button>
+        </div>
       </div>
     </div>
   </section>
@@ -104,7 +122,8 @@
           <button type="button" id="adminEditDocBtn" class="btn btn-outline btn-sm hidden">Edit Naskah</button>
           <button type="button" id="adminEnterBtn" class="btn btn-outline btn-sm">Panitia</button>
           <button type="button" id="adminSettingsBtn" class="btn btn-outline btn-sm hidden">Pengaturan</button>
-          <button type="button" id="adminExitBtn" class="text-btn hidden">Keluar</button>
+          <button type="button" id="adminExitBtn" class="text-btn hidden">Tutup Panitia</button>
+          <button type="button" id="participantExitBtn" class="text-btn" title="Keluar dan kunci kembali halaman di browser ini">Keluar</button>
         </div>
       </div>
     </header>

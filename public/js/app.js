@@ -164,8 +164,11 @@ async function bootstrap() {
     state.isAdmin = Boolean(boot.isAdmin);
 
     const dateDetail = (boot.documentMeta.eventDetails || []).find((r) => /tanggal/i.test(r.label));
-    $('gateEventDate').textContent = (dateDetail && dateDetail.value) || 'Rabu, 25 November 2026';
-    $('gateProgress').textContent = `${boot.stats.signed} / ${boot.stats.total} pihak`;
+    const timeDetail = (boot.documentMeta.eventDetails || []).find((r) => /waktu/i.test(r.label));
+    $('gateEventDate').textContent = [dateDetail?.value || 'Rabu, 25 November 2026', timeDetail?.value]
+      .filter(Boolean)
+      .join(' · ');
+    $('gateProgress').textContent = `${boot.stats.signed} / ${boot.stats.total} pejabat`;
 
     if (boot.authorized) await enterMainApp();
     else showAccessGate();
@@ -179,6 +182,35 @@ async function bootstrap() {
 function showAccessGate() {
   $('appShell').classList.add('hidden');
   $('accessGate').classList.remove('hidden');
+  if (state.stats) {
+    $('gateProgress').textContent = `${state.stats.signed} / ${state.stats.total} pejabat`;
+  }
+  setTimeout(() => $('gateCodeInput')?.focus(), 50);
+}
+
+async function exitParticipantSession() {
+  if (state.isAdmin) {
+    await fetch('/api/auth/logout-admin', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+  }
+  state.isAdmin = false;
+  state.editingDoc = false;
+  state.adminToken = '';
+  state.sessionToken = '';
+  localStorage.removeItem(STORAGE_KEYS.adminToken);
+  localStorage.removeItem(STORAGE_KEYS.sessionToken);
+  if (ws) {
+    try {
+      ws.close();
+    } catch {
+      // ignore
+    }
+    ws = null;
+  }
+  clearTimeout(wsReconnectTimer);
+  $('settingsModal').classList.add('hidden');
+  $('gateCodeInput').value = '';
+  $('gateError').classList.add('hidden');
+  showAccessGate();
 }
 
 async function enterMainApp() {
@@ -843,7 +875,7 @@ function bindEvents() {
       errEl.classList.remove('hidden');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Masuk';
+      btn.textContent = 'Masuk Ruang Penandatanganan';
     }
   });
 
@@ -891,6 +923,7 @@ function bindEvents() {
   $('closeSettingsBtn').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
   $('closeSettingsDoneBtn').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
   $('adminExitBtn').addEventListener('click', exitAdminMode);
+  $('participantExitBtn').addEventListener('click', exitParticipantSession);
 
   $('adminLoginForm').addEventListener('submit', async (e) => {
     e.preventDefault();

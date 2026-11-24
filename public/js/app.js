@@ -489,13 +489,10 @@ function renderList() {
 
   listEl.innerHTML = rows
     .map((s) => {
-      const lock = state.locks[s.id];
-      const isBusy = lock && lock.clientId !== state.clientId;
       const isFresh = state.recentlySignedIds.has(s.id);
 
       const classes = ['ledger-row'];
       if (s.isRepresentative) classes.push('is-leader');
-      if (isBusy) classes.push('is-busy');
       if (isFresh) classes.push('row-flash');
 
       const noCell = s.isRepresentative
@@ -512,8 +509,6 @@ function renderList() {
             <span class="r-sig-time">${esc(formatWitaTime(s.signedAt))}</span>
           </div>
         `;
-      } else if (isBusy) {
-        sigCell = `<div class="r-sig-busy">Sedang diisi...</div>`;
       } else {
         sigCell = `<div class="r-sig-empty">—</div>`;
       }
@@ -531,10 +526,10 @@ function renderList() {
           actionCell = `<span class="status-done">&#10003; Tercatat</span>`;
         }
       } else {
-        const disabled = (state.settings.locked && !state.isAdmin) || isBusy;
+        const disabled = state.settings.locked && !state.isAdmin;
         actionCell = `
           <button type="button" class="btn btn-primary btn-xs" data-action="sign" data-id="${esc(s.id)}" ${disabled ? 'disabled' : ''}>
-            ${isBusy ? 'Sedang diisi' : 'Tanda Tangani'}
+            Tanda Tangani
           </button>
           ${
             state.isAdmin
@@ -661,18 +656,8 @@ function openSignModal(signatoryId) {
     openDetailModal(signatoryId);
     return;
   }
-  const existingLock = state.locks[signatoryId];
-  if (existingLock && existingLock.clientId !== state.clientId) {
-    showToast('Baris ini sedang diisi oleh peserta lain.');
-    return;
-  }
 
   state.signingSignatoryId = signatoryId;
-  wsSend({ type: 'lock_acquire', signatoryId });
-  clearInterval(lockRenewTimer);
-  lockRenewTimer = setInterval(() => {
-    if (state.signingSignatoryId) wsSend({ type: 'lock_renew', signatoryId: state.signingSignatoryId });
-  }, 45_000);
 
   $('signModalKicker').textContent = sig.isRepresentative
     ? `Perwakilan Unsur Peserta · Slot ${sig.repOrder}`
@@ -693,10 +678,7 @@ function openSignModal(signatoryId) {
 }
 
 function closeSignModal() {
-  if (state.signingSignatoryId) {
-    wsSend({ type: 'lock_release', signatoryId: state.signingSignatoryId });
-    state.signingSignatoryId = null;
-  }
+  state.signingSignatoryId = null;
   clearInterval(lockRenewTimer);
   exitPadFullscreen();
   $('signModal').classList.add('hidden');

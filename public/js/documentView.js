@@ -114,8 +114,6 @@ export function renderOfficialDocument({
   // ===== 4 REPRESENTATIVES 2x2 GRID =====
   const repsGridHtml = reps
     .map((rep) => {
-      const lock = locks[rep.id];
-      const isBusy = lock && lock.clientId !== clientId;
       const roleLines =
         Array.isArray(rep.roleLines) && rep.roleLines.length ? rep.roleLines : [rep.role];
 
@@ -124,12 +122,6 @@ export function renderOfficialDocument({
         slotHtml = `
           <div class="rep-sig-slot" ${editMode ? '' : `data-doc-action="detail" data-id="${esc(rep.id)}"`} title="Klik untuk melihat verifikasi">
             <img src="${esc(rep.signatureUrl)}" alt="TTD ${esc(rep.name)}" />
-          </div>
-        `;
-      } else if (isBusy) {
-        slotHtml = `
-          <div class="rep-sig-slot is-unsigned cell-busy">
-            <span style="color:#A85507;font-size:11.5px;font-weight:500">Sedang diisi...</span>
           </div>
         `;
       } else {
@@ -225,20 +217,11 @@ export function renderOfficialDocument({
   // ===== PAGE 2: LAMPIRAN I =====
   const lampiranRowsHtml = lampiran
     .map((s) => {
-      const lock = locks[s.id];
-      const isBusy = lock && lock.clientId !== clientId;
-
       let sigCellHtml = '';
       if (s.signed && s.signatureUrl) {
         sigCellHtml = `
           <td class="paper-sig-cell" ${editMode ? '' : `data-doc-action="detail" data-id="${esc(s.id)}"`}>
             <img class="paper-sig-img" src="${esc(s.signatureUrl)}" alt="TTD ${esc(s.name)}" loading="lazy" />
-          </td>
-        `;
-      } else if (isBusy) {
-        sigCellHtml = `
-          <td class="paper-sig-cell cell-busy">
-            <span style="font-size:11px;color:#A85507;font-weight:500">Sedang diisi...</span>
           </td>
         `;
       } else {

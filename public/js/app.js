@@ -396,6 +396,10 @@ function renderChrome() {
   $('dlFullDocx').href = buildDownloadUrl('/api/export/berita-acara.docx');
   $('dlFullPdf').href = buildDownloadUrl('/api/export/berita-acara.pdf');
   $('dlRekapCsv').href = buildDownloadUrl('/api/export/rekap.csv');
+  if ($('daftarHadirBtn')) {
+    $('daftarHadirBtn').href =
+      state.settings?.daftarHadirUrl || 'https://daftarhadir.web.bps.go.id/#/go/dw4LI';
+  }
 
   if (state.documentMeta) {
     const m = state.documentMeta;
@@ -826,6 +830,9 @@ async function openSettingsModal() {
   try {
     const s = await apiFetch('/api/admin/settings');
     $('adminMeetingCodeInput').value = s.meetingCode || '';
+    $('adminDaftarHadirInput').value =
+      s.daftarHadirUrl || 'https://daftarhadir.web.bps.go.id/#/go/dw4LI';
+    $('adminQrZoomInput').value = s.qrCustomUrl || '';
     $('adminRequireCodeToggle').checked = Boolean(s.requireMeetingCode);
     $('adminLockToggle').checked = Boolean(s.locked);
     $('adminNewPinInput').value = '';
@@ -1004,6 +1011,8 @@ function bindEvents() {
     msgEl.classList.add('hidden');
     const payload = {
       meetingCode: $('adminMeetingCodeInput').value.trim(),
+      daftarHadirUrl: $('adminDaftarHadirInput').value.trim(),
+      qrCustomUrl: $('adminQrZoomInput').value.trim(),
       requireMeetingCode: $('adminRequireCodeToggle').checked,
       locked: $('adminLockToggle').checked,
     };
@@ -1015,6 +1024,9 @@ function bindEvents() {
         method: 'PATCH',
         body: JSON.stringify(payload),
       });
+      if (res.settings) {
+        state.settings = { ...state.settings, ...res.settings };
+      }
       if (res.adminToken) {
         state.adminToken = res.adminToken;
         localStorage.setItem(STORAGE_KEYS.adminToken, res.adminToken);
@@ -1024,8 +1036,9 @@ function bindEvents() {
         localStorage.setItem(STORAGE_KEYS.sessionToken, res.sessionToken);
       }
       $('adminNewPinInput').value = '';
+      renderChrome();
       msgEl.className = 'msg-inline msg-success';
-      msgEl.textContent = 'Pengaturan tersimpan.';
+      msgEl.textContent = 'Pengaturan (termasuk tautan Daftar Hadir & QR Zoom) tersimpan.';
       msgEl.classList.remove('hidden');
     } catch (err) {
       msgEl.className = 'msg-inline msg-error';

@@ -329,6 +329,8 @@ async function startServer() {
       locked: s.locked,
       allowSelfAdd: s.allowSelfAdd,
       requireMeetingCode: s.requireMeetingCode,
+      daftarHadirUrl: s.daftarHadirUrl || 'https://daftarhadir.web.bps.go.id/#/go/dw4LI',
+      qrCustomUrl: s.qrCustomUrl || '',
       updatedAt: s.updatedAt,
       storageMode: store.mode,
     });
@@ -353,6 +355,8 @@ async function startServer() {
           locked: result.settings.locked,
           allowSelfAdd: result.settings.allowSelfAdd,
           requireMeetingCode: result.settings.requireMeetingCode,
+          daftarHadirUrl: result.settings.daftarHadirUrl || 'https://daftarhadir.web.bps.go.id/#/go/dw4LI',
+          qrCustomUrl: result.settings.qrCustomUrl || '',
           updatedAt: result.settings.updatedAt,
         },
         adminToken: freshAdminToken,

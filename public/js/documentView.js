@@ -218,68 +218,92 @@ export function renderOfficialDocument({
     </article>
   `;
 
-  // ===== PAGE 2: LAMPIRAN I =====
-  const lampiranRowsHtml = lampiran
-    .map((s) => {
-      let sigCellHtml = '';
-      if (s.signed && s.signatureUrl) {
-        sigCellHtml = `
-          <td class="paper-sig-cell is-signed">
-            <img class="paper-sig-img" src="${esc(s.signatureUrl)}" alt="TTD ${esc(s.name)}" loading="lazy" />
-          </td>
-        `;
-      } else {
-        sigCellHtml = `
-          <td class="paper-sig-cell" ${editMode ? '' : `data-doc-action="sign" data-id="${esc(s.id)}"`}>
-            ${locked || editMode ? '' : '<span class="paper-click-hint">Klik untuk TTD</span>'}
-          </td>
-        `;
-      }
+  // ===== LAMPIRAN I: MULTI-PAGE A4 PAGINATION =====
+  // Automatically splits Lampiran I rows into discrete A4 pages (16 rows on first Lampiran page, 18 on continuation pages)
+  // so adding new participants automatically spawns a new A4 page with repeated table headers.
+  const FIRST_LAMPIRAN_PAGE_ROWS = 16;
+  const NEXT_LAMPIRAN_PAGE_ROWS = 18;
+  const lampiranChunks = [];
+  if (lampiran.length === 0) {
+    lampiranChunks.push([]);
+  } else {
+    lampiranChunks.push(lampiran.slice(0, FIRST_LAMPIRAN_PAGE_ROWS));
+    for (let idx = FIRST_LAMPIRAN_PAGE_ROWS; idx < lampiran.length; idx += NEXT_LAMPIRAN_PAGE_ROWS) {
+      lampiranChunks.push(lampiran.slice(idx, idx + NEXT_LAMPIRAN_PAGE_ROWS));
+    }
+  }
+
+  const renderLampiranRow = (s) => {
+    let sigCellHtml = '';
+    if (s.signed && s.signatureUrl) {
+      sigCellHtml = `
+        <td class="paper-sig-cell is-signed">
+          <img class="paper-sig-img" src="${esc(s.signatureUrl)}" alt="TTD ${esc(s.name)}" loading="lazy" />
+        </td>
+      `;
+    } else {
+      sigCellHtml = `
+        <td class="paper-sig-cell" ${editMode ? '' : `data-doc-action="sign" data-id="${esc(s.id)}"`}>
+          ${locked || editMode ? '' : '<span class="paper-click-hint">Klik untuk TTD</span>'}
+        </td>
+      `;
+    }
+
+    return `
+      <tr>
+        <td>${esc(s.rowNumber)}</td>
+        <td>${esc(s.name)}</td>
+        <td>${esc(s.role)}</td>
+        ${sigCellHtml}
+      </tr>
+    `;
+  };
+
+  const lampiranPagesHtml = lampiranChunks
+    .map((chunk, pageIdx) => {
+      const rowsHtml = chunk.map(renderLampiranRow).join('');
+      const headerBlock =
+        pageIdx === 0
+          ? `
+            <p class="paper-table-heading">
+              ${
+                editMode
+                  ? `<span ${editableAttrs('lampiranHeading', true)}>${esc(documentMeta.lampiranHeading || 'LAMPIRAN I')}</span>`
+                  : esc(documentMeta.lampiranHeading || 'LAMPIRAN I')
+              }
+            </p>
+            <p class="paper-p" style="margin-bottom:14px">
+              ${
+                editMode
+                  ? `<span ${editableAttrs('lampiranSubheading')}>${esc(documentMeta.lampiranSubheading || '')}</span>`
+                  : esc(documentMeta.lampiranSubheading || '')
+              }
+            </p>
+          `
+          : '';
 
       return `
-        <tr>
-          <td>${esc(s.rowNumber)}</td>
-          <td>${esc(s.name)}</td>
-          <td>${esc(s.role)}</td>
-          ${sigCellHtml}
-        </tr>
+        <article class="${sheetClass}">
+          ${headerBlock}
+          <table class="paper-table">
+            <thead>
+              <tr>
+                <th>NO</th>
+                <th>NAMA</th>
+                <th>LEMBAGA/INSTANSI/JABATAN</th>
+                <th>TANDA TANGAN</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </article>
       `;
     })
     .join('');
 
-  const page2Html = `
-    <article class="${sheetClass}">
-      <p class="paper-table-heading">
-        ${
-          editMode
-            ? `<span ${editableAttrs('lampiranHeading', true)}>${esc(documentMeta.lampiranHeading || 'LAMPIRAN I')}</span>`
-            : esc(documentMeta.lampiranHeading || 'LAMPIRAN I')
-        }
-      </p>
-      <p class="paper-p" style="margin-bottom:14px">
-        ${
-          editMode
-            ? `<span ${editableAttrs('lampiranSubheading')}>${esc(documentMeta.lampiranSubheading || '')}</span>`
-            : esc(documentMeta.lampiranSubheading || '')
-        }
-      </p>
-      <table class="paper-table">
-        <thead>
-          <tr>
-            <th>NO</th>
-            <th>NAMA</th>
-            <th>LEMBAGA/INSTANSI/JABATAN</th>
-            <th>TANDA TANGAN</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${lampiranRowsHtml}
-        </tbody>
-      </table>
-    </article>
-  `;
-
-  container.innerHTML = page1Html + page2Html;
+  container.innerHTML = page1Html + lampiranPagesHtml;
 }
 
 /**

@@ -57,6 +57,7 @@ class ForumStore {
         locked: false,
         allowSelfAdd: false,
         requireMeetingCode: true,
+        daftarHadirUrl: 'https://daftarhadir.web.bps.go.id/#/go/dw4LI',
         qrCustomUrl: '',
         qrIncludeCode: false,
         updatedAt: new Date().toISOString(),
@@ -88,6 +89,9 @@ class ForumStore {
     }
     if (!this.state.settings.adminPin) {
       this.state.settings.adminPin = String(process.env.ADMIN_PIN || '202600').trim();
+    }
+    if (!this.state.settings.daftarHadirUrl) {
+      this.state.settings.daftarHadirUrl = 'https://daftarhadir.web.bps.go.id/#/go/dw4LI';
     }
   }
 
@@ -224,8 +228,14 @@ class ForumStore {
   }
 
   getPublicSettings() {
-    const { locked, allowSelfAdd, requireMeetingCode, updatedAt } = this.state.settings;
-    return { locked, allowSelfAdd, requireMeetingCode, updatedAt };
+    const { locked, allowSelfAdd, requireMeetingCode, daftarHadirUrl, updatedAt } = this.state.settings;
+    return {
+      locked,
+      allowSelfAdd,
+      requireMeetingCode,
+      daftarHadirUrl: daftarHadirUrl || 'https://daftarhadir.web.bps.go.id/#/go/dw4LI',
+      updatedAt,
+    };
   }
 
   getStats() {
@@ -578,6 +588,13 @@ class ForumStore {
         throw new Error('Link QR harus diawali http:// atau https://');
       }
       s.qrCustomUrl = rawUrl;
+    }
+    if (typeof patch.daftarHadirUrl === 'string') {
+      const rawDh = patch.daftarHadirUrl.trim().slice(0, 400);
+      if (rawDh && !/^https?:\/\/\S+$/i.test(rawDh)) {
+        throw new Error('Link Daftar Hadir harus diawali http:// atau https://');
+      }
+      s.daftarHadirUrl = rawDh || 'https://daftarhadir.web.bps.go.id/#/go/dw4LI';
     }
     if (typeof patch.meetingCode === 'string' && patch.meetingCode.trim().length >= 3) {
       s.meetingCode = normalizeCode(patch.meetingCode).slice(0, 20);

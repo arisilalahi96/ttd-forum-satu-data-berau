@@ -167,7 +167,6 @@ async function bootstrap() {
 
     $('gateEventDate').textContent = boot.documentMeta.eventDateLabel;
     $('gateProgress').textContent = `${boot.stats.signed} / ${boot.stats.total} pihak`;
-    if (state.displayName) $('gateDisplayName').value = state.displayName;
 
     if (boot.authorized) await enterMainApp();
     else showAccessGate();
@@ -375,9 +374,7 @@ function renderChrome() {
   $('adminEnterBtn').classList.toggle('hidden', admin);
   $('adminSettingsBtn').classList.toggle('hidden', !admin);
   $('adminExitBtn').classList.toggle('hidden', !admin);
-
-  const canAdd = admin || (state.settings.allowSelfAdd && !state.settings.locked);
-  $('addParticipantBtn').classList.toggle('hidden', !canAdd);
+  $('addParticipantBtn').classList.toggle('hidden', !admin);
 
   $('dlFullDocx').href = buildDownloadUrl('/api/export/berita-acara.docx');
   $('dlFullPdf').href = buildDownloadUrl('/api/export/berita-acara.pdf');
@@ -744,7 +741,6 @@ async function openSettingsModal() {
     const s = await apiFetch('/api/admin/settings');
     $('adminMeetingCodeInput').value = s.meetingCode || '';
     $('adminRequireCodeToggle').checked = Boolean(s.requireMeetingCode);
-    $('adminAllowSelfAddToggle').checked = Boolean(s.allowSelfAdd);
     $('adminLockToggle').checked = Boolean(s.locked);
     $('adminNewPinInput').value = '';
   } catch {
@@ -827,11 +823,6 @@ function bindEvents() {
     const errEl = $('gateError');
     errEl.classList.add('hidden');
     const code = $('gateCodeInput').value.trim();
-    const displayName = $('gateDisplayName').value.trim();
-    if (displayName) {
-      state.displayName = displayName;
-      localStorage.setItem(STORAGE_KEYS.displayName, displayName);
-    }
 
     const btn = $('gateSubmitBtn');
     btn.disabled = true;
@@ -922,7 +913,6 @@ function bindEvents() {
     const payload = {
       meetingCode: $('adminMeetingCodeInput').value.trim(),
       requireMeetingCode: $('adminRequireCodeToggle').checked,
-      allowSelfAdd: $('adminAllowSelfAddToggle').checked,
       locked: $('adminLockToggle').checked,
     };
     const newPin = $('adminNewPinInput').value.trim();

@@ -39,17 +39,6 @@
           />
         </div>
 
-        <div class="field-group">
-          <label for="gateDisplayName" class="field-label">Nama Anda <span class="muted">(opsional)</span></label>
-          <input
-            id="gateDisplayName"
-            type="text"
-            class="input-control"
-            placeholder="Nama lengkap"
-            maxlength="60"
-          />
-        </div>
-
         <div id="gateError" class="msg-inline msg-error hidden" role="alert"></div>
 
         <button type="submit" id="gateSubmitBtn" class="btn btn-primary btn-full btn-lg">
@@ -170,7 +159,7 @@
             <button type="button" class="seg-btn" data-status="signed">Sudah <span class="mono" id="countSigned">0</span></button>
           </div>
 
-          <button type="button" id="addParticipantBtn" class="btn btn-outline btn-sm">+ Tambah</button>
+          <button type="button" id="addParticipantBtn" class="btn btn-outline btn-sm hidden">+ Tambah</button>
         </div>
 
         <!-- Hint for Document Mode -->
@@ -190,7 +179,7 @@
           </div>
           <div id="signatoriesList" class="ledger-body" aria-live="polite"></div>
           <div id="emptyState" class="empty-state hidden">
-            Tidak ditemukan nama yang sesuai. Klik <strong>+ Tambah</strong> jika nama belum terdaftar.
+            Tidak ditemukan nama yang sesuai. Hubungi Panitia jika nama belum terdaftar.
           </div>
         </div>
       </section>
@@ -444,11 +433,6 @@
           <label class="check-row">
             <input type="checkbox" id="adminRequireCodeToggle" />
             <span>Wajibkan Kode Rapat saat peserta masuk</span>
-          </label>
-
-          <label class="check-row">
-            <input type="checkbox" id="adminAllowSelfAddToggle" />
-            <span>Izinkan peserta menambahkan nama baru</span>
           </label>
 
           <label class="check-row check-danger">

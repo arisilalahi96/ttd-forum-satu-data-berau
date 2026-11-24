@@ -29,7 +29,7 @@ class ForumStore {
         meetingCode: normalizeCode(process.env.MEETING_CODE || 'SDI2026'),
         adminPin: String(process.env.ADMIN_PIN || '202600').trim(),
         locked: false,
-        allowSelfAdd: true,
+        allowSelfAdd: false,
         requireMeetingCode: true,
         updatedAt: new Date().toISOString(),
       },

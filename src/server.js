@@ -232,13 +232,13 @@ async function startServer() {
     }
   });
 
-  app.post('/api/signatories', requireParticipant, async (req, res) => {
+  app.post('/api/signatories', requireAdmin, async (req, res) => {
     try {
       const { name, role } = req.body || {};
       const result = await store.addSignatory({
         name,
         role,
-        isAdmin: isValidAdmin(req),
+        isAdmin: true,
       });
 
       hub.broadcast({

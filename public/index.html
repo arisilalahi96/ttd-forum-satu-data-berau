@@ -102,7 +102,6 @@
             Daftar Hadir &#8599;
           </a>
           <button type="button" id="adminEditDocBtn" class="btn btn-outline btn-sm hidden">Edit Naskah</button>
-          <button type="button" id="qrBtn" class="btn btn-outline btn-sm">QR Zoom</button>
           <button type="button" id="adminEnterBtn" class="btn btn-outline btn-sm">Panitia</button>
           <button type="button" id="adminSettingsBtn" class="btn btn-outline btn-sm hidden">Pengaturan</button>
           <button type="button" id="adminExitBtn" class="text-btn hidden">Keluar</button>
@@ -370,42 +369,7 @@
     </div>
   </div>
 
-  <!-- ===== MODAL 4: QR ZOOM ACARA ===== -->
-  <div id="qrModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
-    <div class="modal-panel modal-sm">
-      <div class="modal-header">
-        <div>
-          <p class="modal-kicker">Pertemuan Daring</p>
-          <h2 class="modal-title" id="qrModalTitle">QR Zoom Acara</h2>
-        </div>
-        <button type="button" class="icon-close" id="closeQrModalBtn" aria-label="Tutup">&times;</button>
-      </div>
-      <div class="modal-body qr-body">
-        <div id="qrSvgBox" class="qr-svg-box"></div>
-        <p id="qrParticipantHint" class="muted" style="margin:0;font-size:13px;text-align:center">
-          Pindai QR Code ini untuk bergabung ke ruang Zoom Meeting acara Forum Satu Data.
-        </p>
-
-        <!-- Panitia-only QR Zoom Link Editor -->
-        <div id="qrAdminControls" class="hidden" style="width:100%;display:flex;flex-direction:column;gap:10px">
-          <div>
-            <label for="qrUrlInput" class="field-label">Tautan Zoom Meeting <span class="muted">(khusus Panitia)</span></label>
-            <div class="qr-url-row">
-              <input id="qrUrlInput" type="url" class="input-control mono" placeholder="https://zoom.us/j/..." />
-              <button type="button" id="saveQrUrlBtn" class="btn btn-primary btn-sm">Simpan</button>
-              <button type="button" id="copyQrUrlBtn" class="btn btn-outline btn-sm">Salin</button>
-            </div>
-          </div>
-          <div id="qrError" class="msg-inline msg-error hidden" style="margin-top:0"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="closeQrDoneBtn" class="btn btn-primary btn-full">Tutup</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== MODAL 5: LOGIN PANITIA ===== -->
+  <!-- ===== MODAL 3: LOGIN PANITIA ===== -->
   <div id="adminLoginModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle">
     <div class="modal-panel modal-sm">
       <div class="modal-header">
@@ -432,7 +396,7 @@
     </div>
   </div>
 
-  <!-- ===== MODAL 6: PENGATURAN PANITIA ===== -->
+  <!-- ===== MODAL 4: PENGATURAN PANITIA ===== -->
   <div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
     <div class="modal-panel modal-signing">
       <div class="modal-header">
@@ -452,11 +416,6 @@
           <div class="field-group">
             <label for="adminDaftarHadirInput" class="field-label">Tautan Daftar Hadir <span class="muted">(dibuka peserta saat klik Daftar Hadir)</span></label>
             <input id="adminDaftarHadirInput" type="url" class="input-control mono" placeholder="https://daftarhadir.web.bps.go.id/#/go/dw4LI" />
-          </div>
-
-          <div class="field-group">
-            <label for="adminQrZoomInput" class="field-label">Tautan QR Zoom Acara <span class="muted">(ditampilkan pada QR Zoom peserta)</span></label>
-            <input id="adminQrZoomInput" type="url" class="input-control mono" placeholder="https://zoom.us/j/..." />
           </div>
 
           <label class="check-row">
@@ -480,7 +439,7 @@
         <div class="danger-zone">
           <div>
             <strong>Bersihkan Data Uji Coba</strong>
-            <p class="muted" style="margin:2px 0 0;font-size:12px;">Hapus semua tanda tangan &amp; peserta tambahan, kembali ke 55 baris awal.</p>
+            <p class="muted" style="margin:2px 0 0;font-size:12px;">Hapus semua tanda tangan &amp; peserta tambahan, kembali ke 50 baris awal.</p>
           </div>
           <button type="button" id="resetAllDataBtn" class="btn btn-danger-outline btn-sm">Reset Semua</button>
         </div>
@@ -497,7 +456,7 @@
     </div>
   </div>
 
-  <!-- ===== MODAL 7: EDIT DATA (PANITIA) ===== -->
+  <!-- ===== MODAL 5: EDIT DATA (PANITIA) ===== -->
   <div id="editModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
     <div class="modal-panel modal-sm">
       <div class="modal-header">

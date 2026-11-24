@@ -5,7 +5,6 @@ const fsp = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
 const { cloneDefaultDocumentMeta, createInitialSignatories, classifyInstansiGroup } = require('./seed');
-const { computeVerificationHash } = require('./utils/pngTools');
 const { normalizeCode } = require('./utils/formatters');
 
 const SCHEMA_VERSION = 3;
@@ -58,8 +57,6 @@ class ForumStore {
         allowSelfAdd: false,
         requireMeetingCode: true,
         daftarHadirUrl: 'https://daftarhadir.web.bps.go.id/#/go/dw4LI',
-        qrCustomUrl: '',
-        qrIncludeCode: false,
         updatedAt: new Date().toISOString(),
       },
       signatories: createInitialSignatories(),
@@ -316,19 +313,10 @@ class ForumStore {
     }
 
     const signedAt = new Date().toISOString();
-    const hash = computeVerificationHash({
-      documentId: this.state.documentMeta.id,
-      signatoryId: signatory.id,
-      name: signatory.name,
-      representedBy: null,
-      signedAt,
-      pngBuffer,
-    });
 
     signatory.signed = true;
     signatory.signatureMethod = method === 'upload' ? 'upload' : 'draw';
     signatory.signedAt = signedAt;
-    signatory.verificationHash = hash;
     signatory.signatureWidth = width;
     signatory.signatureHeight = height;
     signatory.signatureVersion = (signatory.signatureVersion || 0) + 1;
@@ -342,7 +330,6 @@ class ForumStore {
       name: signatory.name,
       role: signatory.role,
       method: signatory.signatureMethod,
-      verificationHash: hash,
       summary: `${signatory.name} menandatangani via ${methodLabel}.`,
     });
 
@@ -369,7 +356,6 @@ class ForumStore {
     signatory.signed = false;
     signatory.signatureMethod = null;
     signatory.signedAt = null;
-    signatory.verificationHash = null;
     signatory.signatureWidth = null;
     signatory.signatureHeight = null;
     signatory.signatureVersion = (signatory.signatureVersion || 0) + 1;
@@ -423,7 +409,6 @@ class ForumStore {
       signed: false,
       signatureMethod: null,
       signedAt: null,
-      verificationHash: null,
       signatureWidth: null,
       signatureHeight: null,
       signatureVersion: 0,
@@ -581,14 +566,6 @@ class ForumStore {
     const s = this.state.settings;
     if (typeof patch.locked === 'boolean') s.locked = patch.locked;
     if (typeof patch.requireMeetingCode === 'boolean') s.requireMeetingCode = patch.requireMeetingCode;
-    if (typeof patch.qrIncludeCode === 'boolean') s.qrIncludeCode = patch.qrIncludeCode;
-    if (typeof patch.qrCustomUrl === 'string') {
-      const rawUrl = patch.qrCustomUrl.trim().slice(0, 300);
-      if (rawUrl && !/^https?:\/\/\S+$/i.test(rawUrl)) {
-        throw new Error('Link QR harus diawali http:// atau https://');
-      }
-      s.qrCustomUrl = rawUrl;
-    }
     if (typeof patch.daftarHadirUrl === 'string') {
       const rawDh = patch.daftarHadirUrl.trim().slice(0, 400);
       if (rawDh && !/^https?:\/\/\S+$/i.test(rawDh)) {

@@ -9,22 +9,17 @@ import {
 const STORAGE_KEYS = {
   sessionToken: 'fsd2026_session_token',
   adminToken: 'fsd2026_admin_token',
-  displayName: 'fsd2026_display_name',
 };
 
 const state = {
   documentMeta: null,
-  settings: { locked: false, allowSelfAdd: true, requireMeetingCode: true },
-  stats: { total: 55, signed: 0, tableTotal: 54, tableSigned: 0, leaderSigned: false, percentage: 0 },
+  settings: { locked: false, allowSelfAdd: false, requireMeetingCode: true },
+  stats: { total: 50, signed: 0, percentage: 0 },
   signatories: [],
   auditLogs: [],
-  locks: {},
-  onlineCount: 1,
-  clientId: null,
   isAdmin: false,
   sessionToken: localStorage.getItem(STORAGE_KEYS.sessionToken) || '',
   adminToken: localStorage.getItem(STORAGE_KEYS.adminToken) || '',
-  displayName: localStorage.getItem(STORAGE_KEYS.displayName) || '',
 
   activeView: 'list', // 'list' | 'document'
   searchQuery: '',
@@ -34,14 +29,12 @@ const state = {
 
   signingSignatoryId: null,
   signingMode: 'draw',
-  detailSignatoryId: null,
   editingDoc: false,
 };
 
 let ws = null;
 let wsReconnectDelay = 1200;
 let wsReconnectTimer = null;
-let lockRenewTimer = null;
 let sigPad = null;
 let imgCleaner = null;
 
@@ -169,7 +162,6 @@ async function bootstrap() {
     state.settings = boot.settings;
     state.stats = boot.stats;
     state.isAdmin = Boolean(boot.isAdmin);
-    state.onlineCount = boot.onlineCount || 1;
 
     const dateDetail = (boot.documentMeta.eventDetails || []).find((r) => /tanggal/i.test(r.label));
     $('gateEventDate').textContent = (dateDetail && dateDetail.value) || 'Rabu, 25 November 2026';
@@ -204,8 +196,6 @@ async function fetchFullState() {
     state.stats = data.stats;
     state.signatories = data.signatories;
     state.auditLogs = data.auditLogs || [];
-    state.locks = data.locks || {};
-    state.onlineCount = data.onlineCount || 1;
     state.isAdmin = Boolean(data.isAdmin);
     renderAll();
   } catch (err) {
@@ -227,14 +217,10 @@ function connectWebSocket() {
   clearTimeout(wsReconnectTimer);
 
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  updateConnStatus('connecting', 'Menyambungkan...');
   ws = new WebSocket(`${proto}//${window.location.host}/ws`);
 
   ws.addEventListener('open', () => {
     wsReconnectDelay = 1200;
-    updateConnStatus('online', `${state.onlineCount} online`);
-    if (state.displayName) wsSend({ type: 'hello', name: state.displayName });
-    if (state.signingSignatoryId) wsSend({ type: 'lock_acquire', signatoryId: state.signingSignatoryId });
   });
 
   ws.addEventListener('message', (event) => {
@@ -248,7 +234,6 @@ function connectWebSocket() {
   });
 
   ws.addEventListener('close', () => {
-    updateConnStatus('offline', 'Menyambung ulang...');
     wsReconnectTimer = setTimeout(async () => {
       connectWebSocket();
       if (!$('appShell').classList.contains('hidden')) await fetchFullState();
@@ -259,44 +244,8 @@ function connectWebSocket() {
   ws.addEventListener('error', () => ws.close());
 }
 
-function wsSend(payload) {
-  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
-}
-
-function updateConnStatus(status, text) {
-  const pill = $('wsStatusPill');
-  const label = $('wsStatusText');
-  if (!pill || !label) return;
-  pill.classList.remove('conn-online', 'conn-offline', 'conn-connecting');
-  pill.classList.add(`conn-${status}`);
-  label.textContent = text;
-}
-
 function handleWsMessage(msg) {
   switch (msg.type) {
-    case 'welcome':
-      state.clientId = msg.clientId;
-      state.onlineCount = msg.onlineCount || 1;
-      state.locks = msg.locks || {};
-      updateConnStatus('online', `${state.onlineCount} online`);
-      renderAll();
-      break;
-
-    case 'presence':
-      state.onlineCount = msg.onlineCount || 1;
-      updateConnStatus('online', `${state.onlineCount} online`);
-      break;
-
-    case 'locks':
-      state.locks = msg.locks || {};
-      renderList();
-      if (state.activeView === 'document' && !state.editingDoc) renderDocumentView();
-      break;
-
-    case 'lock_denied':
-      showToast(`Sedang diisi oleh ${msg.holderName || 'peserta lain'}.`);
-      break;
-
     case 'signature_saved':
       upsertSignatory(msg.signatory);
       if (msg.stats) state.stats = msg.stats;
@@ -595,8 +544,6 @@ function renderDocumentView() {
     container: $('documentSheetContainer'),
     documentMeta: state.documentMeta,
     signatories: state.signatories,
-    locks: state.locks,
-    clientId: state.clientId,
     locked: state.settings.locked && !state.isAdmin,
     editMode: editing,
   });
@@ -707,7 +654,6 @@ function openSignModal(signatoryId) {
 
 function closeSignModal() {
   state.signingSignatoryId = null;
-  clearInterval(lockRenewTimer);
   exitPadFullscreen();
   $('signModal').classList.add('hidden');
 }
@@ -786,55 +732,6 @@ async function submitSignature() {
   }
 }
 
-// ===== QR ZOOM MODAL (PESERTA: SCAN QR ONLY; PANITIA: EDIT ZOOM LINK) =====
-let currentQrTargetUrl = '';
-
-async function openQrModal() {
-  $('qrError').classList.add('hidden');
-  $('qrAdminControls').classList.toggle('hidden', !state.isAdmin);
-  $('qrParticipantHint').classList.toggle('hidden', state.isAdmin);
-  $('qrModal').classList.remove('hidden');
-  await loadQrCode();
-}
-
-async function loadQrCode() {
-  try {
-    const data = await apiFetch('/api/qr');
-    $('qrSvgBox').innerHTML = data.svg;
-    currentQrTargetUrl = data.url || '';
-    if (state.isAdmin) {
-      $('qrUrlInput').value = data.baseUrl || '';
-    }
-  } catch {
-    showToast('Gagal memuat QR Zoom.');
-  }
-}
-
-async function saveAdminQrSettings() {
-  if (!state.isAdmin) return;
-  const errEl = $('qrError');
-  errEl.classList.add('hidden');
-  const rawUrl = $('qrUrlInput').value.trim();
-  const btn = $('saveQrUrlBtn');
-  btn.disabled = true;
-  try {
-    await apiFetch('/api/admin/settings', {
-      method: 'PATCH',
-      body: JSON.stringify({
-        qrCustomUrl: rawUrl,
-        qrIncludeCode: false,
-      }),
-    });
-    await loadQrCode();
-    showToast('Tautan QR Zoom diperbarui.');
-  } catch (err) {
-    errEl.textContent = err.message || 'Gagal menyimpan tautan QR Zoom.';
-    errEl.classList.remove('hidden');
-  } finally {
-    btn.disabled = false;
-  }
-}
-
 // ===== PANITIA SETTINGS MODAL =====
 async function openSettingsModal() {
   if (!state.isAdmin) return;
@@ -846,7 +743,6 @@ async function openSettingsModal() {
     $('adminMeetingCodeInput').value = s.meetingCode || '';
     $('adminDaftarHadirInput').value =
       s.daftarHadirUrl || 'https://daftarhadir.web.bps.go.id/#/go/dw4LI';
-    $('adminQrZoomInput').value = s.qrCustomUrl || '';
     $('adminRequireCodeToggle').checked = Boolean(s.requireMeetingCode);
     $('adminLockToggle').checked = Boolean(s.locked);
     $('adminNewPinInput').value = '';
@@ -1026,7 +922,6 @@ function bindEvents() {
     const payload = {
       meetingCode: $('adminMeetingCodeInput').value.trim(),
       daftarHadirUrl: $('adminDaftarHadirInput').value.trim(),
-      qrCustomUrl: $('adminQrZoomInput').value.trim(),
       requireMeetingCode: $('adminRequireCodeToggle').checked,
       locked: $('adminLockToggle').checked,
     };
@@ -1052,7 +947,7 @@ function bindEvents() {
       $('adminNewPinInput').value = '';
       renderChrome();
       msgEl.className = 'msg-inline msg-success';
-      msgEl.textContent = 'Pengaturan (termasuk tautan Daftar Hadir & QR Zoom) tersimpan.';
+      msgEl.textContent = 'Pengaturan (termasuk tautan Daftar Hadir) tersimpan.';
       msgEl.classList.remove('hidden');
     } catch (err) {
       msgEl.className = 'msg-inline msg-error';
@@ -1062,7 +957,7 @@ function bindEvents() {
   });
 
   $('resetAllDataBtn').addEventListener('click', async () => {
-    if (!window.confirm('Yakin hapus SEMUA tanda tangan & peserta tambahan (kembali ke 0 / 55)?')) return;
+    if (!window.confirm('Yakin hapus SEMUA tanda tangan & peserta tambahan (kembali ke 0 / 50)?')) return;
     try {
       await apiFetch('/api/admin/reset-all', { method: 'POST' });
       $('settingsModal').classList.add('hidden');
@@ -1114,22 +1009,6 @@ function bindEvents() {
       const { docAction, id } = docTrigger.dataset;
       if (docAction === 'sign') openSignModal(id);
     }
-  });
-
-  // QR Zoom Modal
-  $('qrBtn').addEventListener('click', openQrModal);
-  $('closeQrModalBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
-  $('closeQrDoneBtn').addEventListener('click', () => $('qrModal').classList.add('hidden'));
-  $('saveQrUrlBtn').addEventListener('click', saveAdminQrSettings);
-  $('copyQrUrlBtn').addEventListener('click', async () => {
-    const toCopy = currentQrTargetUrl || $('qrUrlInput').value;
-    try {
-      await navigator.clipboard.writeText(toCopy);
-    } catch {
-      $('qrUrlInput').select();
-      document.execCommand('copy');
-    }
-    showToast('Tautan QR disalin.');
   });
 
   // Signing Modal
@@ -1278,7 +1157,6 @@ function bindEvents() {
     if ($('padCanvasWrap').classList.contains('is-fullscreen')) exitPadFullscreen();
     else if (!$('signModal').classList.contains('hidden')) closeSignModal();
     else if (!$('addModal').classList.contains('hidden')) $('addModal').classList.add('hidden');
-    else if (!$('qrModal').classList.contains('hidden')) $('qrModal').classList.add('hidden');
     else if (!$('adminLoginModal').classList.contains('hidden')) $('adminLoginModal').classList.add('hidden');
     else if (!$('settingsModal').classList.contains('hidden')) $('settingsModal').classList.add('hidden');
     else if (state.editingDoc) cancelInlineDocEdit();

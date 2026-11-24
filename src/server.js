@@ -6,7 +6,6 @@ const http = require('http');
 const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
-const QRCode = require('qrcode');
 
 const { ForumStore } = require('./store');
 const { RealtimeHub } = require('./realtime');
@@ -14,7 +13,7 @@ const { parseAndValidatePngDataUrl } = require('./utils/pngTools');
 const { normalizeCode } = require('./utils/formatters');
 const { generateBeritaAcaraDocx } = require('./exporters/docxBeritaAcara');
 const { generateBeritaAcaraPdf } = require('./exporters/pdfBeritaAcara');
-const { generateRekapCsv } = require('./exporters/zipArchive');
+const { generateRekapCsv } = require('./exporters/rekapCsv');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -188,8 +187,6 @@ async function startServer() {
     res.json({
       ...store.getPublicState(),
       isAdmin: isValidAdmin(req),
-      locks: hub.getSerializableLocks(),
-      onlineCount: hub.clients.size,
     });
   });
 
@@ -204,7 +201,7 @@ async function startServer() {
   app.post('/api/signatories/:id/sign', requireParticipant, async (req, res) => {
     try {
       const id = req.params.id;
-      const { signatureDataUrl, method, representedBy } = req.body || {};
+      const { signatureDataUrl, method } = req.body || {};
       const { buffer, width, height } = parseAndValidatePngDataUrl(signatureDataUrl);
 
       const result = await store.saveSignature(id, {
@@ -212,11 +209,9 @@ async function startServer() {
         width,
         height,
         method,
-        representedBy,
         allowOverwrite: isValidAdmin(req),
       });
 
-      hub.releaseLockForSignatory(id);
       hub.broadcast({
         type: 'signature_saved',
         signatory: result.signatory,
@@ -233,11 +228,7 @@ async function startServer() {
   app.post('/api/signatories', requireAdmin, async (req, res) => {
     try {
       const { name, role } = req.body || {};
-      const result = await store.addSignatory({
-        name,
-        role,
-        isAdmin: true,
-      });
+      const result = await store.addSignatory({ name, role });
 
       hub.broadcast({
         type: 'signatory_added',
@@ -252,31 +243,7 @@ async function startServer() {
     }
   });
 
-  // ===== QR ZOOM ACARA (PESERTA CAN VIEW QR ONLY; ONLY PANITIA CAN CHANGE ZOOM LINK) =====
-  app.get('/api/qr', requireParticipant, async (req, res) => {
-    try {
-      const admin = isValidAdmin(req);
-      const settings = store.getSettings();
-      const targetUrl = settings.qrCustomUrl || 'https://zoom.us/';
-
-      const svg = await QRCode.toString(targetUrl, {
-        type: 'svg',
-        margin: 2,
-        color: { dark: '#14263D', light: '#FFFFFF' },
-      });
-
-      res.json({
-        svg,
-        url: admin ? targetUrl : null,
-        baseUrl: admin ? (settings.qrCustomUrl || '') : null,
-        isCustomUrl: Boolean(settings.qrCustomUrl),
-      });
-    } catch {
-      res.status(500).json({ error: 'Gagal membuat QR Code.' });
-    }
-  });
-
-  // ===== EXPORTS: FULL BERITA ACARA & INDIVIDUAL (OPEN TO ALL MEETING PARTICIPANTS) =====
+  // ===== EXPORTS: FULL BERITA ACARA (OPEN TO ALL MEETING PARTICIPANTS) =====
   app.get('/api/export/berita-acara.docx', requireParticipant, async (_req, res) => {
     try {
       const buf = await generateBeritaAcaraDocx(store);
@@ -330,7 +297,6 @@ async function startServer() {
       allowSelfAdd: s.allowSelfAdd,
       requireMeetingCode: s.requireMeetingCode,
       daftarHadirUrl: s.daftarHadirUrl || 'https://daftarhadir.web.bps.go.id/#/go/dw4LI',
-      qrCustomUrl: s.qrCustomUrl || '',
       updatedAt: s.updatedAt,
       storageMode: store.mode,
     });
@@ -356,7 +322,6 @@ async function startServer() {
           allowSelfAdd: result.settings.allowSelfAdd,
           requireMeetingCode: result.settings.requireMeetingCode,
           daftarHadirUrl: result.settings.daftarHadirUrl || 'https://daftarhadir.web.bps.go.id/#/go/dw4LI',
-          qrCustomUrl: result.settings.qrCustomUrl || '',
           updatedAt: result.settings.updatedAt,
         },
         adminToken: freshAdminToken,

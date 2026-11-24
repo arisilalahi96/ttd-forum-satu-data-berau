@@ -24,8 +24,6 @@ export function renderOfficialDocument({
   container,
   documentMeta,
   signatories,
-  locks,
-  clientId,
   locked,
   editMode = false,
 }) {

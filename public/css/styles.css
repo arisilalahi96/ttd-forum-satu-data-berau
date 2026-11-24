@@ -438,9 +438,7 @@ html, body {
 .paper-sig-cell { cursor: pointer; min-height: 46px; }
 .paper-sig-cell.is-signed { cursor: default; }
 .paper-sig-cell:not(.is-signed):hover { background: var(--subtle); }
-.paper-sig-cell.cell-busy { background: #fffbeb; }
 .paper-sig-img { max-width: 158px; max-height: 44px; object-fit: contain; display: block; margin: 0 auto; }
-.paper-dots { color: var(--muted); }
 .paper-click-hint { display: block; font-family: var(--font-sans); font-size: 10.5px; color: var(--ink); margin-top: 2px; }
 
 /* ===== MODALS ===== */
@@ -456,8 +454,6 @@ html, body {
   box-shadow: 0 22px 48px rgba(20, 38, 61, 0.16);
 }
 .modal-sm { max-width: 400px; }
-.modal-sm-wide { max-width: 460px; }
-.modal-wide { max-width: 720px; }
 
 .modal-header {
   padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
@@ -477,12 +473,6 @@ html, body {
   padding: 13px 22px; border-top: 1px solid var(--border); background: var(--subtle);
   display: flex; align-items: center; justify-content: flex-end; gap: 8px;
 }
-.modal-footer-between { justify-content: space-between; }
-
-/* Edit Document Modal */
-textarea.input-control { resize: vertical; line-height: 1.5; font-size: 13.5px; }
-.doc-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.doc-edit-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 10px; }
 
 /* Signing Modal */
 .mode-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 12px; gap: 16px; }
@@ -570,29 +560,6 @@ textarea.input-control { resize: vertical; line-height: 1.5; font-size: 13.5px; 
 .activity-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
 .activity-summary { margin: 0; color: var(--text); }
 .activity-meta { margin-top: 2px; font-size: 11px; color: var(--muted); }
-
-/* Detail Modal */
-.detail-sig-box {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 20px; display: flex; align-items: center; justify-content: center;
-  min-height: 115px; margin-bottom: 14px; background: #ffffff;
-}
-.detail-sig-box img { max-width: 100%; max-height: 105px; object-fit: contain; }
-.detail-meta-list { border-top: 1px solid var(--border); margin-bottom: 16px; }
-.detail-meta-row {
-  display: flex; justify-content: space-between; gap: 12px;
-  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
-}
-.detail-meta-row span:first-child { color: var(--muted); }
-.detail-meta-row span:last-child { color: var(--text); font-weight: 500; text-align: right; }
-.detail-dl-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-
-/* QR */
-.qr-body { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.qr-svg-box { width: 210px; height: 210px; border: 1px solid var(--border); padding: 8px; border-radius: var(--radius); }
-.qr-svg-box svg { width: 100%; height: 100%; display: block; }
-.qr-code-line { margin: 0; font-size: 13.5px; color: var(--ink); }
-.qr-url-row { width: 100%; display: flex; gap: 8px; }
 
 /* Toast */
 .toast-stack {
